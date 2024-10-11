@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1016616217443",
+    "project_id": "fetprojet",
+    "storage_bucket": "fetprojet.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016616217443:android:cb3c86d265dd3dfe944156",
+        "android_client_info": {
+          "package_name": "com.example.fetprojet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1016616217443-f4nvg1kn2vnp37idnnk7laq4sutttbht.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW0z-lFai8lJ2peD4i5onDR8CFvcc9znY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1016616217443-f4nvg1kn2vnp37idnnk7laq4sutttbht.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
