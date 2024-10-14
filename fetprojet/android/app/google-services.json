@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1016616217443-jgipnqqf5e0c5mp4cdj455ic9e0976re.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fetprojet",
+            "certificate_hash": "b0feff082490464e08b7c8b880bec0cdb4bee5c4"
+          }
+        },
+        {
           "client_id": "1016616217443-f4nvg1kn2vnp37idnnk7laq4sutttbht.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "1016616217443-f4nvg1kn2vnp37idnnk7laq4sutttbht.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1016616217443-d6no7vbpgmm5u82mbj1gq7e6s25vd6nj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fetprojet"
+              }
             }
           ]
         }
