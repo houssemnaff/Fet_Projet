@@ -266,10 +266,9 @@ class _SignupPageState extends State<SignupPage> {
 
       if (user != null) {
         print("User signed in: ${user.email}");
-        Navigator.pushReplacement(
+       Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
-        );
+          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user) ));
       }
     } catch (error) {
       print("Error signing in with Google: $error");

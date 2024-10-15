@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
                                 fontSize: 30, fontWeight: FontWeight.bold),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                       const SizedBox(height: 20),
                         FadeInUp(
                           duration: const Duration(milliseconds: 1200),
                           child: const Text(
@@ -86,6 +86,12 @@ class _LoginPageState extends State<LoginPage> {
                               icon: Icons.lock,
                             ),
                           ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text("mote passe oublier",style: TextStyle(color: Colors.blue),),
+                            ],
+                          )
                         ],
                       ),
                     ),
