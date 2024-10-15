@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/pages/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // Import Google Sign-In
 import 'package:sign_in_button/sign_in_button.dart';
@@ -17,13 +18,15 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController controlerPassword = TextEditingController();
   final TextEditingController controlerPassword2 = TextEditingController();
   final TextEditingController controlerEmail = TextEditingController();
-  String email = "";
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _obscurePassword = true; // To toggle password visibility
+  bool _obscurePassword2 = true; // For confirm password
   User? _user;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize Google Sign-In
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn =
+      GoogleSignIn(); // Initialize Google Sign-In
 
   @override
-  void initState() { // Fixed typo in iniState to initState
+  void initState() {
     super.initState();
     _auth.authStateChanges().listen((event) {
       setState(() {
@@ -51,7 +54,6 @@ class _SignupPageState extends State<SignupPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
           height: MediaQuery.of(context).size.height - 50,
-          width: double.infinity,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
@@ -61,7 +63,8 @@ class _SignupPageState extends State<SignupPage> {
                     duration: const Duration(milliseconds: 1000),
                     child: const Text(
                       "Sign up",
-                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -77,14 +80,42 @@ class _SignupPageState extends State<SignupPage> {
               Column(
                 children: <Widget>[
                   FadeInUp(
-                      duration: const Duration(milliseconds: 1200),
-                      child: makeInput(label: "Email", Icons.email, controlerEmail)),
+                    duration: const Duration(milliseconds: 1200),
+                    child: makeInput(
+                      label: "Email",
+                      icon: Icons.email,
+                      controller: controlerEmail,
+                      obscureText: false,
+                    ),
+                  ),
                   FadeInUp(
-                      duration: const Duration(milliseconds: 1300),
-                      child: makeInput(label: "Password", Icons.lock, obscureText: true, controlerPassword)),
+                    duration: const Duration(milliseconds: 1300),
+                    child: makeInput(
+                      label: "Password",
+                      icon: Icons.lock,
+                      controller: controlerPassword,
+                      obscureText: _obscurePassword,
+                      toggleVisibility: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
                   FadeInUp(
-                      duration: const Duration(milliseconds: 1400),
-                      child: makeInput(label: "Confirm Password", Icons.password, controlerPassword2, obscureText: true)),
+                    duration: const Duration(milliseconds: 1400),
+                    child: makeInput(
+                      label: "Confirm Password",
+                      icon: Icons.lock,
+                      controller: controlerPassword2,
+                      obscureText: _obscurePassword2,
+                      toggleVisibility: () {
+                        setState(() {
+                          _obscurePassword2 = !_obscurePassword2;
+                        });
+                      },
+                    ),
+                  ),
                 ],
               ),
               FadeInUp(
@@ -103,9 +134,9 @@ class _SignupPageState extends State<SignupPage> {
                   child: MaterialButton(
                     minWidth: double.infinity,
                     height: 60,
-                   onPressed: () async {
-        await _signUp(context);
-      },
+                    onPressed: () async {
+                      await _signUp(context);
+                    },
                     color: const Color.fromARGB(255, 25, 28, 184),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -113,7 +144,10 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     child: const Text(
                       "Sign up",
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Colors.white),
                     ),
                   ),
                 ),
@@ -121,38 +155,17 @@ class _SignupPageState extends State<SignupPage> {
               FadeInUp(
                 child: SignInButton(
                   Buttons.google,
-                  onPressed: ()async {_handleGoogleSignup(context);} , // Correctly call the function
+                  onPressed: () async {
+                    _handleGoogleSignup(context);
+                  },
                 ),
               ),
               FadeInUp(
                 child: SignInButton(
                   Buttons.gitHub,
-                onPressed: () async {
-  UserCredential? userCredential = await _handleGithubSignup();
-  if (userCredential != null) {
-    User? user = userCredential.user; // Récupérer l'utilisateur
-
-    if (user != null) { // Vérifier que l'utilisateur n'est pas nul
-      // Utilisateur connecté avec succès, redirige vers la page d'accueil
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(user: user)),
-      );
-    } else {
-      // Gérer le cas où l'utilisateur est nul
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not found')),
-      );
-    }
-  } else {
-    // Gérer l'erreur de connexion
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Error signing in with GitHub')),
-    );
-  }
-},
-
-
+                  onPressed: () async {
+                    _handleGithubSignup(context);
+                  },
                 ),
               ),
               FadeInUp(
@@ -165,7 +178,8 @@ class _SignupPageState extends State<SignupPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const LoginPage()),
+                          MaterialPageRoute(
+                              builder: (context) => const LoginPage()),
                         );
                       },
                       child: const Text(
@@ -187,13 +201,18 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget makeInput(IconData icon, TextEditingController controllername, {label, obscureText = false}) {
+  Widget makeInput(
+      {required String label,
+      required IconData icon,
+      required TextEditingController controller,
+      bool obscureText = false,
+      VoidCallback? toggleVisibility}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const SizedBox(height: 5),
         TextField(
-          controller: controllername,
+          controller: controller,
           obscureText: obscureText,
           decoration: InputDecoration(
             focusedBorder: OutlineInputBorder(
@@ -201,10 +220,17 @@ class _SignupPageState extends State<SignupPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            suffixIcon: Icon(icon),
-            suffixIconColor: Colors.black,
+            suffixIcon: toggleVisibility != null
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.black,
+                    ),
+                    onPressed: toggleVisibility,
+                  )
+                : Icon(icon, color: Colors.black),
             labelStyle: const TextStyle(color: Colors.black),
-            label: Text(label),
+            labelText: label,
           ),
         ),
         const SizedBox(height: 30),
@@ -212,145 +238,117 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
- Future<void> _handleGoogleSignup(BuildContext context) async {
-  try {
-     await _googleSignIn.signOut(); // Sign out from Google
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase Auth
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      // User canceled the sign-in
-      return;
-    }
-
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-    // Check if tokens are available
-    if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-      print("Error: Missing access token or ID token");
-      return;
-    }
-
-    // Create a new credential
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Sign in to Firebase with the Google credential
-    UserCredential userCredential = await _auth.signInWithCredential(credential);
-
-    // If the user is successfully signed in, you can access user info
-    User? user = userCredential.user;
-
-    if (user != null) {
-      print("User signed in: ${user.email}");
-      // Redirect to the Home page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(user: user)),
-      );
-    }
-  } catch (error) {
-    print("Error signing in with Google: $error");
-    // Handle specific error codes if needed
-  }
-}
-
-
-
-
-  Future<UserCredential?> _handleGithubSignup() async {
-  try {
-    // Crée une instance de GithubAuthProvider
-    GithubAuthProvider githubProvider = GithubAuthProvider();
-
-    // Authentifie l'utilisateur avec GitHub
-    UserCredential userCredential = await FirebaseAuth.instance.signInWithPopup(githubProvider);
-
-    // Renvoie les informations d'identification de l'utilisateur
-    return userCredential;
-  } catch (error) {
-    print("Error signing in with GitHub: $error");
-    return null; // En cas d'erreur, renvoie null
-  }
-}
-
-  Future<void> _logout(BuildContext context) async {
+  Future<void> _handleGoogleSignup(BuildContext context) async {
     try {
       await _googleSignIn.signOut(); // Sign out from Google
       await FirebaseAuth.instance.signOut(); // Sign out from Firebase Auth
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()), // Ensure HomePage is imported
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return; // User canceled the sign-in
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        print("Error: Missing access token or ID token");
+        return;
+      }
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Successfully logged out')),
-      );
+
+      UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      User? user = userCredential.user;
+
+      if (user != null) {
+        print("User signed in: ${user.email}");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
+        );
+      }
     } catch (error) {
+      print("Error signing in with Google: $error");
+    }
+  }
+
+  Future<void> _handleGithubSignup(BuildContext context) async {
+    try {
+      GithubAuthProvider githubProvider = GithubAuthProvider();
+
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithPopup(githubProvider);
+      User? user = userCredential.user;
+
+      Navigator.pop(context); // Close the loading dialog
+      if (user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
+        );
+      }
+    } catch (error) {
+      Navigator.pop(context); // Close the loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error logging out: $error')),
+        SnackBar(content: Text('Error signing in with GitHub: $error')),
       );
     }
   }
 
-
-  ////////////////////////////////signi 
   Future<void> _signUp(BuildContext context) async {
-  String email = controlerEmail.text.trim();
-  String password = controlerPassword.text.trim();
-  String confirmPassword = controlerPassword2.text.trim();
+    String email = controlerEmail.text.trim();
+    String password = controlerPassword.text.trim();
+    String confirmPassword = controlerPassword2.text.trim();
 
-  // Vérification des champs vides
-  if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fill in all fields')),
-    );
-    return;
-  }
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
 
-  // Vérification des mots de passe
-  if (password != confirmPassword) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Passwords do not match')),
-    );
-    return;
-  }
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
 
-  try {
-    // Créer un nouvel utilisateur
-    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    // Si l'inscription est réussie, vous pouvez accéder à l'utilisateur
-    User? user = userCredential.user;
+      User? user = userCredential.user;
 
-    if (user != null) {
-      print("User registered: ${user.email}");
-      // Rediriger vers la page d'accueil
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(user: user)),
+      if (user != null) {
+        print("User registered: ${user.email}");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email already in use')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+      }
+    } catch (error) {
+      print("Error signing up: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing up: $error')),
       );
     }
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'email-already-in-use') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email already in use')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.message}')),
-      );
-    }
-  } catch (error) {
-    print("Error signing up: $error");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error signing up: $error')),
-    );
   }
-}
-
-  
 }
