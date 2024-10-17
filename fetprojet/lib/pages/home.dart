@@ -18,15 +18,15 @@ class MergedDashboardScreen extends StatelessWidget {
       "value": "Aug 26, 2021\n11:15:54",
       "icon": Icons.access_time
     },
-    {"title": "Temperature", "value": "23.5 °C", "icon": Icons.thermostat},
+    /*{"title": "Temperature", "value": "23.5 °C", "icon": Icons.thermostat},
     {"title": "Humidity", "value": "95.80%", "icon": Icons.water_drop},
     {"title": "room", "value": "1011.40 Pa", "icon": Icons.cabin},
-    {"title": "Wind Speed", "value": "0.00 m/s", "icon": Icons.air},
-    {"title": "Wind Direction", "value": "0.00°", "icon": Icons.navigation},
-    {"title": "Rain Quantity", "value": "0.00", "icon": Icons.water},
-    {"title": "Rain Intensity", "value": "2.20", "icon": Icons.shower},
-    {"title": "Water Level", "value": "13.05 m", "icon": Icons.waves},
-    {"title": "Soil Moisture", "value": "40.90%", "icon": Icons.grass},
+    {"title": "", "value": "0.00 m/s", "icon": Icons.air},
+    {"title": "", "value": "0.00°", "icon": Icons.navigation},
+    {"title": "", "value": "0.00", "icon": Icons.water},
+    {"title": "", "value": "2.20", "icon": Icons.shower},
+    {"title": "", "value": "13.05 m", "icon": Icons.waves},
+    {"title": "", "value": "40.90%", "icon": Icons.grass},*/
   ];
 
   @override

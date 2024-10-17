@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
                                 fontSize: 30, fontWeight: FontWeight.bold),
                           ),
                         ),
-                       const SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         FadeInUp(
                           duration: const Duration(milliseconds: 1200),
                           child: const Text(
@@ -89,9 +89,50 @@ class _LoginPageState extends State<LoginPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Text("mote passe oublier",style: TextStyle(color: Colors.blue),),
+                              InkWell(
+                                onTap: () async {
+                                  String email = controllerEmail.text.trim();
+
+                                  if (email.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please enter your email to reset your password'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  try {
+                                    await FirebaseAuth.instance
+    .sendPasswordResetEmail(email:email);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Password reset email has been sent!'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  "mot de passe oublié",
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
                             ],
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -228,8 +269,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                MergedDashboardScreen(user: user!)), // Pass the user to HomePage
+            builder: (context) => MergedDashboardScreen(
+                user: user!)), // Pass the user to HomePage
       );
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // Close the loading dialog
@@ -271,8 +312,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                MergedDashboardScreen(user: user!)), // Pass the user to HomePage
+            builder: (context) => MergedDashboardScreen(
+                user: user!)), // Pass the user to HomePage
       );
     } catch (e) {
       Navigator.pop(context); // Close the loading dialog
