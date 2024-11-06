@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-class MergedDashboardScreen extends StatelessWidget {
+class home extends StatelessWidget {
   final User user;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  MergedDashboardScreen({super.key, required this.user});
+  home({super.key, required this.user});
 
   // Données de démonstration pour chaque carte
   final List<Map<String, dynamic>> dashboardItems = [
@@ -46,7 +46,7 @@ class MergedDashboardScreen extends StatelessWidget {
             backgroundImage: user.photoURL != null
                 ? NetworkImage(
                     user.photoURL!) // Si l'URL de l'image existe, on l'utilise
-                : AssetImage(
+                : const AssetImage(
                     'assets/default_avatar.png'), // Sinon, on affiche une image par défaut
           ),
         ],

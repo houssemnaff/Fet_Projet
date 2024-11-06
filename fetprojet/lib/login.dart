@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:fetprojet/pages/admin/session.dart';
 import 'package:fetprojet/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -106,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
 
                                   try {
                                     await FirebaseAuth.instance
-    .sendPasswordResetEmail(email:email);
+                                        .sendPasswordResetEmail(email: email);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -268,9 +269,9 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pop(context); // Close the loading dialog
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) => MergedDashboardScreen(
-                user: user!)), // Pass the user to HomePage
+        //MaterialPageRoute( builder: (context) =>home(user: user!)), // Pass the user to HomePage
+
+        MaterialPageRoute(builder: (context) => Session(user: user!,)),
       );
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // Close the loading dialog
@@ -311,9 +312,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pop(context); // Close the loading dialog
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) => MergedDashboardScreen(
-                user: user!)), // Pass the user to HomePage
+       // MaterialPageRoute( builder: (context) => home(user: user!)), // Pass the user to HomePage
+       MaterialPageRoute(builder: (context) => Session(user: user!,)),
       );
     } catch (e) {
       Navigator.pop(context); // Close the loading dialog

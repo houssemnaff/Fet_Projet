@@ -1,6 +1,8 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/firebase_options.dart';
 import 'package:fetprojet/login.dart';
+import 'package:fetprojet/pages/admin/session.dart';
+import 'package:fetprojet/pages/profil.dart';
 import 'package:fetprojet/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +33,10 @@ class HomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
+
             children: <Widget>[
               Column(
+                
                 children: <Widget>[
                   FadeInUp(duration: const Duration(milliseconds: 1000), child:const Text("Welcome", style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -51,7 +55,7 @@ class HomePage extends StatelessWidget {
                 height: MediaQuery.of(context).size.height / 3,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/logo.jpeg')
+                    image: AssetImage('assets/logo.png')
                   )
                 ),
               )),

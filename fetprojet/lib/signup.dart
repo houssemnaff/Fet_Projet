@@ -1,5 +1,7 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:fetprojet/pages/admin/session.dart';
 import 'package:fetprojet/pages/home.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -268,7 +270,9 @@ class _SignupPageState extends State<SignupPage> {
         print("User signed in: ${user.email}");
        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user) ));
+         // MaterialPageRoute(builder: (context) => home(user: user) )
+           MaterialPageRoute(builder: (context) => Session(user: user,)),
+          );
       }
     } catch (error) {
       print("Error signing in with Google: $error");
@@ -287,7 +291,7 @@ class _SignupPageState extends State<SignupPage> {
       if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
+          MaterialPageRoute(builder: (context) => home(user: user)),
         );
       }
     } catch (error) {
@@ -330,7 +334,8 @@ class _SignupPageState extends State<SignupPage> {
         print("User registered: ${user.email}");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MergedDashboardScreen(user: user)),
+       //   MaterialPageRoute(builder: (context) => home(user: user)),
+        MaterialPageRoute(builder: (context) => Session(user: user,)),
         );
       }
     } on FirebaseAuthException catch (e) {
