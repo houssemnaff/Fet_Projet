@@ -291,7 +291,7 @@ class _SignupPageState extends State<SignupPage> {
       if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => home(user: user)),
+          MaterialPageRoute(builder: (context) => Session(user: user)),
         );
       }
     } catch (error) {

@@ -2,6 +2,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/firebase_options.dart';
 import 'package:fetprojet/login.dart';
 import 'package:fetprojet/pages/admin/session.dart';
+import 'package:fetprojet/pages/home.dart';
 import 'package:fetprojet/pages/profil.dart';
 import 'package:fetprojet/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,9 +13,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    const MaterialApp(
+    MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: MainScreen(),
     )
   );
 }
