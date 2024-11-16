@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:fetprojet/pages/home.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -89,7 +90,7 @@ class _SessionFormState extends State<SessionForm> {
                     context, (picked) => setState(() => timeDayEnd = picked)),
               ),
               SizedBox(height: 16),
-              Text("Active Days",
+              const Text("Active Days",
                   style: TextStyle(fontWeight: FontWeight.bold)),
               Column(
                 children: daysOfWeek.map((day) {
@@ -110,9 +111,22 @@ class _SessionFormState extends State<SessionForm> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {
+                onPressed: ()  {
                   if (_formKey.currentState!.validate()) {
-                    // Prepare data in JSON format
+                    sendData();
+                  }
+                },
+                child: Text("Submit"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+ void sendData() async{
+  // Prepare data in JSON format
                     final formData = {
                       "year": year,
                       "universityName": universityName,
@@ -135,20 +149,12 @@ class _SessionFormState extends State<SessionForm> {
                     // Handle response
                     if (response.statusCode == 200) {
                       print("Data submitted successfully!");
-                      // Optionally, display a success message or navigate
+                      Navigator.pushReplacement((context), MaterialPageRoute(builder: (context) => Dashboard(),));
+                     
                     } else {
                       print(
                           "Failed to submit data. Error 111111111111111111111111111111: ${response.statusCode}");
                       // Optionally, display an error message
                     }
-                  }
-                },
-                child: Text("Submit"),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+ }
 }

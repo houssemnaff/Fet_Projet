@@ -1,6 +1,8 @@
 import 'package:fetprojet/components/drawer.dart';
 import 'package:fetprojet/login.dart';
 import 'package:fetprojet/pages/admin/sessionform.dart';
+import 'package:fetprojet/pages/home.dart';
+import 'package:fetprojet/pages/profil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -31,19 +33,28 @@ class _SessionState extends State<Session> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: DrawerPage(),
+     // drawer: DrawerPage(),
       appBar: AppBar(
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _logout(context),
           ),
-          CircleAvatar(
-            radius: 15,
-            backgroundImage: widget.user.photoURL != null
-                ? NetworkImage(widget.user.photoURL!)
-                : const AssetImage('assets/default_avatar.png') as ImageProvider,
-          ),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Profile()),
+              );
+            },
+            child: CircleAvatar(
+              radius: 15,
+              backgroundImage: widget.user.photoURL != null
+                  ? NetworkImage(widget.user.photoURL!)
+                  : const AssetImage('assets/default_avatar.png')
+                      as ImageProvider,
+            ),
+          )
         ],
         title: const Text("Session"),
       ),
@@ -62,7 +73,8 @@ class _SessionState extends State<Session> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -92,6 +104,18 @@ class _SessionState extends State<Session> {
                   session["name"],
                   session["time"],
                   () => _deleteSession(index),
+                  () {
+                    // Navigate to Dashboard and pass session details
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Dashboard(
+                         // sessionName: session["name"],
+                          //sessionTime: session["time"],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -121,7 +145,7 @@ class _SessionState extends State<Session> {
 }
 
 // Widget to display individual session details
-Widget listSession(String name, DateTime time, VoidCallback onDelete) {
+Widget listSession(String name, DateTime time, VoidCallback onDelete, VoidCallback onTap) {
   return ListTile(
     title: Text(name),
     subtitle: Text("Time: ${time.toLocal()}"),
@@ -131,5 +155,42 @@ Widget listSession(String name, DateTime time, VoidCallback onDelete) {
       color: Colors.red,
       onPressed: onDelete,
     ),
+    onTap: onTap, // Redirect to the dashboard page when tapped
   );
+}
+
+// Example Dashboard Page
+class DashboardPage extends StatelessWidget {
+  final String sessionName;
+  final DateTime sessionTime;
+
+  const DashboardPage({
+    super.key,
+    required this.sessionName,
+    required this.sessionTime,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Dashboard"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Session Details",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            Text("Name: $sessionName"),
+            Text("Time: ${sessionTime.toLocal()}"),
+          ],
+        ),
+      ),
+    );
+  }
 }

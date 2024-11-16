@@ -1,77 +1,60 @@
+import 'dart:math';
+
 import 'package:fetprojet/class/menuitem.dart';
-import 'package:fetprojet/pages/admin/departementsview.dart';
-import 'package:fetprojet/pages/admin/session.dart';
-import 'package:fetprojet/pages/admin/sessionform.dart';
-import 'package:fetprojet/pages/admin/telechargerprof.dart';
-import 'package:fetprojet/pages/admin/uplodfileetudiant.dart';
-import 'package:fetprojet/pages/class/classs.dart';
+import 'package:fetprojet/components/drawer.dart';
+import 'package:fetprojet/pages/profil.dart';
 import 'package:flutter/material.dart';
 
-class Dashboard extends StatelessWidget {
+class DashEtudiant extends StatelessWidget {
+  DashEtudiant({super.key});
+
   final List<MenuItem> menuItems = [
-    MenuItem(
-      'Class',
-      Icons.chair,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DepartmentClassPage()),
-        );
-      },
-    ),
-    MenuItem(
-      'Messages',
-      Icons.mail,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => SessionForm()),
-        );
-      },
-    ),
-    MenuItem(
-      'Etudiants',
-      Icons.group,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FileUploadPage()),
-        );
-      },
-    ),
-    MenuItem('Departments', Icons.apartment,
-    (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DepartmentPage()),
-        );
-      },),
+    MenuItem('Absences', Icons.event_busy),
     MenuItem('Résultats', Icons.school),
     MenuItem('Emploi', Icons.schedule),
-    MenuItem('Teachers', Icons.group, (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FileUploadPageprof()),
-        );
-      },
-      ),
+    MenuItem('Mon Groupe', Icons.group),
     MenuItem('Langues', Icons.language),
     MenuItem('Mon Solde', Icons.attach_money),
+    MenuItem('Message', Icons.message),
+    MenuItem('homework', Icons.work_history),
+     MenuItem('cours', Icons.bookmarks),
   ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: DrawerPage(),
       appBar: AppBar(
-        centerTitle: true,
-        title: Text("naffouti houssem"),
+        title: Text("Houssem naffouti"),
         backgroundColor: Colors.blue,
+        actions:  [
+          Padding(
+            padding: EdgeInsets.only(right: 13.0),
+            child: InkWell(
+              onTap: (){
+                 Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Profile()),
+              );
+              },
+              child: const CircleAvatar(
+                radius: 16,
+                backgroundImage: AssetImage(("assets/background.jpeg")),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 7.0),
+            child: Icon(
+              Icons.logout,
+              color: Colors.black,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Header Image
           Container(
-            margin: EdgeInsets.all(16),
+            margin: EdgeInsets.all(6),
             height: 180,
             decoration: BoxDecoration(
               image: const DecorationImage(
@@ -81,18 +64,10 @@ class Dashboard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          // Menu Title
           const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              'MENU PRINCIPALE',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: Text(" Lna talqa kol chy"),
           ),
-          // Menu Grid
           Expanded(
             child: GridView.builder(
               padding: EdgeInsets.all(8),
@@ -116,6 +91,7 @@ class Dashboard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
+                      
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(

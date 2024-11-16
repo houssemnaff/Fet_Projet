@@ -41,6 +41,11 @@ dependencies:
   google_sign_in: ^6.1.0 
   cloud_firestore: ^5.4.4
   http: ^1.2.2
+  syncfusion_flutter_datagrid: ^27.2.2
+  file_picker: ^8.1.4
+  csv: ^5.0.2
+  percent_indicator: ^4.2.0
+  quickalert: ^1.1.0
   
 
 dev_dependencies:
