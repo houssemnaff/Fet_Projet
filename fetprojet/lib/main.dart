@@ -1,27 +1,21 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/firebase_options.dart';
 import 'package:fetprojet/login.dart';
-import 'package:fetprojet/pages/admin/profs.dart';
-import 'package:fetprojet/pages/admin/session.dart';
-import 'package:fetprojet/pages/admin/telechargerprof.dart';
-import 'package:fetprojet/pages/etudiant/dashboardetudiant.dart';
-import 'package:fetprojet/pages/home.dart';
-import 'package:fetprojet/pages/profil.dart';
+import 'package:fetprojet/pages/admin/home.dart';
 import 'package:fetprojet/signup.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
  
+  var user;
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: Dashboard(),
     )
   );
 }

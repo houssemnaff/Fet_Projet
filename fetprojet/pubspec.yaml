@@ -42,10 +42,12 @@ dependencies:
   cloud_firestore: ^5.4.4
   http: ^1.2.2
   syncfusion_flutter_datagrid: ^27.2.2
-  file_picker: ^8.1.4
   csv: ^5.0.2
   percent_indicator: ^4.2.0
   quickalert: ^1.1.0
+  file_picker: ^8.1.6
+  flutter_dotenv: ^5.2.1
+  shared_preferences: ^2.3.5
   
 
 dev_dependencies:

@@ -22,18 +22,18 @@ class DashEtudiant extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: DrawerPage(),
+      drawer: const DrawerPage(),
       appBar: AppBar(
-        title: Text("Houssem naffouti"),
+        title: const Text("Houssem naffouti"),
         backgroundColor: Colors.blue,
         actions:  [
           Padding(
-            padding: EdgeInsets.only(right: 13.0),
+            padding: const EdgeInsets.only(right: 13.0),
             child: InkWell(
               onTap: (){
                  Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => Profile()),
+                MaterialPageRoute(builder: (context) => UserProfilePage()),
               );
               },
               child: const CircleAvatar(
@@ -54,7 +54,7 @@ class DashEtudiant extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            margin: EdgeInsets.all(6),
+            margin: const EdgeInsets.all(6),
             height: 180,
             decoration: BoxDecoration(
               image: const DecorationImage(
@@ -70,7 +70,7 @@ class DashEtudiant extends StatelessWidget {
           ),
           Expanded(
             child: GridView.builder(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 8,
@@ -99,7 +99,7 @@ class DashEtudiant extends StatelessWidget {
                           size: 40,
                           color: const Color.fromARGB(255, 191, 25, 25),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           menuItems[index].title,
                           textAlign: TextAlign.center,

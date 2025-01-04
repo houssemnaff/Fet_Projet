@@ -1,13 +1,8 @@
 import 'package:animate_do/animate_do.dart';
-import 'package:fetprojet/pages/admin/session.dart';
-import 'package:fetprojet/pages/home.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Import Google Sign-In
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_button/sign_in_button.dart';
-import 'login.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -20,12 +15,16 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController controlerPassword = TextEditingController();
   final TextEditingController controlerPassword2 = TextEditingController();
   final TextEditingController controlerEmail = TextEditingController();
-  bool _obscurePassword = true; // To toggle password visibility
-  bool _obscurePassword2 = true; // For confirm password
+  bool _obscurePassword = true;
+  bool _obscurePassword2 = true;
   User? _user;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn =
-      GoogleSignIn(); // Initialize Google Sign-In
+
+  // Initialize GoogleSignIn with clientId
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId:
+        '1016616217443-f4nvg1kn2vnp37idnnk7laq4sutttbht.apps.googleusercontent.com',
+  );
 
   @override
   void initState() {
@@ -162,40 +161,6 @@ class _SignupPageState extends State<SignupPage> {
                   },
                 ),
               ),
-              FadeInUp(
-                child: SignInButton(
-                  Buttons.gitHub,
-                  onPressed: () async {
-                    _handleGithubSignup(context);
-                  },
-                ),
-              ),
-              FadeInUp(
-                duration: const Duration(milliseconds: 1600),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const Text("Already have an account?"),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const LoginPage()),
-                        );
-                      },
-                      child: const Text(
-                        " Login",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -203,12 +168,13 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget makeInput(
-      {required String label,
-      required IconData icon,
-      required TextEditingController controller,
-      bool obscureText = false,
-      VoidCallback? toggleVisibility}) {
+  Widget makeInput({
+    required String label,
+    required IconData icon,
+    required TextEditingController controller,
+    bool obscureText = false,
+    VoidCallback? toggleVisibility,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -242,20 +208,13 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _handleGoogleSignup(BuildContext context) async {
     try {
-      await _googleSignIn.signOut(); // Sign out from Google
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase Auth
+      await _googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        return; // User canceled the sign-in
-      }
+      if (googleUser == null) return;
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
-      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-        print("Error: Missing access token or ID token");
-        return;
-      }
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -268,37 +227,17 @@ class _SignupPageState extends State<SignupPage> {
 
       if (user != null) {
         print("User signed in: ${user.email}");
-       Navigator.pushReplacement(
-          context,
-         // MaterialPageRoute(builder: (context) => home(user: user) )
-           MaterialPageRoute(builder: (context) => Session(user: user,)),
-          );
-      }
-    } catch (error) {
-      print("Error signing in with Google: $error");
-    }
-  }
-
-  Future<void> _handleGithubSignup(BuildContext context) async {
-    try {
-      GithubAuthProvider githubProvider = GithubAuthProvider();
-
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithPopup(githubProvider);
-      User? user = userCredential.user;
-
-      Navigator.pop(context); // Close the loading dialog
-      if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Session(user: user)),
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              body: Center(child: Text("Welcome ${user.email}!")),
+            ),
+          ),
         );
       }
     } catch (error) {
-      Navigator.pop(context); // Close the loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error signing in with GitHub: $error')),
-      );
+      print("Error signing in with Google: $error");
     }
   }
 
@@ -334,8 +273,11 @@ class _SignupPageState extends State<SignupPage> {
         print("User registered: ${user.email}");
         Navigator.pushReplacement(
           context,
-       //   MaterialPageRoute(builder: (context) => home(user: user)),
-        MaterialPageRoute(builder: (context) => Session(user: user,)),
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              body: Center(child: Text("Welcome ${user.email}!")),
+            ),
+          ),
         );
       }
     } on FirebaseAuthException catch (e) {

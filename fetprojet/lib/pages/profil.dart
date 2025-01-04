@@ -1,107 +1,164 @@
-import 'package:fetprojet/components/drawer.dart';
+import 'package:fetprojet/authservice.dart';
 import 'package:flutter/material.dart';
 
-class Profile extends StatefulWidget {
-  const Profile({super.key});
+class UserProfilePage extends StatelessWidget {
+  final String userName = "Houssem Naffouti";
+  final String email = "houssem.naffouti@example.com";
+  final String phoneNumber = "+216 123 456 789";
+  final String role = "Admin";
+  final String bio = "Développeur passionné avec une expertise en Flutter et Spring Boot.";
+AuthService authservice = AuthService();
 
-  @override
-  State<Profile> createState() => _ProfileState();
-}
-
-class _ProfileState extends State<Profile> {
+  UserProfilePage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: DrawerPage(),
       appBar: AppBar(
-        title: Text("Profil"),
-        actions: const [
-          CircleAvatar(
-            radius: 15,
-            backgroundImage: AssetImage("assets/logo.png"),
-          ),
-        ],
+        centerTitle: true,
+       
+        backgroundColor: Colors.blue,
+        elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 20.0),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(30),
+                ),
+              ),
               child: Column(
                 children: [
+                  // Profile Picture
                   const CircleAvatar(
-                    radius: 59, // Taille de l'avatar
-                    backgroundImage: AssetImage('assets/logo.png'),
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/profile.jpg'), // Replace with your image asset
                   ),
-                  SizedBox(height: 10),
-                  Form(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 30),
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            decoration: InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                borderSide:
-                                    const BorderSide(color: Colors.black),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.person),
-                              labelStyle: const TextStyle(color: Colors.black),
-                              label: const Text("Nom"),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextFormField(
-                            decoration: InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                borderSide:
-                                    const BorderSide(color: Colors.black),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.email),
-                              labelStyle: const TextStyle(color: Colors.black),
-                              label: const Text("Email"),
-                            ),
-                          ),
-                        ],
+                  const SizedBox(height: 10),
+                  // User Name
+                  Text(
+                    userName,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  // Role
+                  Text(
+                    role,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // User Details
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  ProfileDetailTile(
+                    icon: Icons.email,
+                    title: "Email",
+                    value: email,
+                  ),
+                  ProfileDetailTile(
+                    icon: Icons.phone,
+                    title: "Téléphone",
+                    value: phoneNumber,
+                  ),
+                  ProfileDetailTile(
+                    icon: Icons.info,
+                    title: "Bio",
+                    value: bio,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Action Buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Action for editing profile
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Modifier le profil"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      
+              authservice.logout(context);
+
+
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text("Se déconnecter"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    style:  ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color.fromARGB(255, 40, 15, 202)), // Fix here
-                    ),
-                    child: const Text("Modifier",style: TextStyle(color: Colors.white)),
-                  ),
-                  const SizedBox(width: 20),
-                   ElevatedButton(
-                     style:  ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color.fromARGB(255, 214, 28, 15)), // Fix here
-                    ),
-                    onPressed: () {},
-                    child: Text("Annuler",style: TextStyle(color: Colors.white),),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ProfileDetailTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const ProfileDetailTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blue),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(value),
       ),
     );
   }
