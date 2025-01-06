@@ -1,16 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:fetprojet/api/sessionapi.dart';
 import 'package:fetprojet/authservice.dart';
 import 'package:fetprojet/pages/admin/session/sessionform.dart';
 import 'package:fetprojet/pages/profil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../home.dart';
 
 class Session extends StatefulWidget {
-  final User user; // Utilisation du paramètre "user" non statique
+ 
 
-  const Session({super.key, required this.user});
+  const Session({super.key});
 
   @override
   State<Session> createState() => _SessionState();
@@ -19,31 +19,57 @@ class Session extends StatefulWidget {
 class _SessionState extends State<Session> {
   final List<Map<String, dynamic>> sessions = [];
   final AuthService _authService = AuthService();
-  final ApiService apiService = ApiService(); // Création d'une instance d'ApiService
+  final ApiService apiService = ApiService();
+        
 
   @override
   void initState() {
     super.initState();
+     print('Initializing Sessions...');
     _loadSessions();
   }
 
-  /// Charger les sessions depuis l'API
   void _loadSessions() async {
     try {
-      final sessionList = await apiService.fetchSessions();
-      setState(() {
-        sessions.addAll(sessionList);
-      });
+      
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? userid = prefs.getString("userId");
+      final userSessions = await apiService.fetchSessions(userid);
+      final List<String> sessionList = List<String>.from(userSessions['sessionList']);
+
+      if (sessionList.isNotEmpty) {
+        for (String sessionId in sessionList) {
+          final sessionDetails = await apiService.fetchSessionDetails(sessionId);
+          sessionDetails['sessionId'] = sessionId;
+          setState(() {
+            sessions.add(sessionDetails);
+            print("sesssion desponible $sessions");
+          });
+        }
+      } else {
+        print('No sessions found');
+      }
     } catch (e) {
       print('Failed to load sessions: $e');
     }
   }
 
-  /// Supprimer une session de la liste
   void _deleteSession(int index) {
     setState(() {
       sessions.removeAt(index);
     });
+  }
+
+  Widget _getDayStatusWidget(String day, List<String> activeDays) {
+    bool isActive = activeDays.contains(day);
+    return CircleAvatar(
+      radius: 8,
+      backgroundColor: isActive ? Colors.green : Colors.red,
+      child: Text(
+        day[0], // Affiche la première lettre du jour
+        style: TextStyle(color: Colors.white, fontSize: 12),
+      ),
+    );
   }
 
   @override
@@ -64,10 +90,7 @@ class _SessionState extends State<Session> {
             },
             child: CircleAvatar(
               radius: 15,
-              backgroundImage: widget.user.photoURL != null
-                  ? NetworkImage(widget.user.photoURL!)
-                  : const AssetImage('assets/default_avatar.png')
-                      as ImageProvider,
+              backgroundImage:  AssetImage('assets/default_avatar.png') as ImageProvider,
             ),
           ),
           const SizedBox(width: 10),
@@ -76,7 +99,6 @@ class _SessionState extends State<Session> {
       ),
       body: Column(
         children: [
-          // Bouton Ajouter une Session
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -84,7 +106,7 @@ class _SessionState extends State<Session> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SessionForm(user: widget.user),
+                    builder: (context) => SessionForm(),
                   ),
                 );
               },
@@ -107,7 +129,6 @@ class _SessionState extends State<Session> {
             ),
           ),
           const SizedBox(height: 30),
-          // Liste des Sessions Disponibles
           const Align(
             alignment: Alignment.centerLeft,
             child: Padding(
@@ -123,20 +144,39 @@ class _SessionState extends State<Session> {
               itemCount: sessions.length,
               itemBuilder: (context, index) {
                 final session = sessions[index];
+                final activeDays = List<String>.from(session['activeDays']);
                 return ListTile(
-                  title: Text(session["name"]),
-                  subtitle: Text("Time: ${session["time"]}"),
+                  title: Text(session["universityName"] ?? 'No University'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Year: ${session["year"] ?? 'No Year'}"),
+                      Row(
+                        children: [
+                          ...['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                              .map((day) => Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                    child: _getDayStatusWidget(day, activeDays),
+                                  ))
+                              .toList(),
+                        ],
+                      ),
+                    ],
+                  ),
                   leading: const Icon(Icons.event),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     color: Colors.red,
                     onPressed: () => _deleteSession(index),
                   ),
-                  onTap: () {
+                  onTap: () async{
+                     final SharedPreferences prefs = await SharedPreferences.getInstance();
+                     await prefs.setString("sessionId", session["sessionId"]);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => Dashboard(),
+                        builder: (context) => Dashboard(), // Navigating to Dashboard
                       ),
                     );
                   },

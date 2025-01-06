@@ -1,6 +1,9 @@
 import 'package:fetprojet/components/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class Teacher {
   final int id;
@@ -16,6 +19,17 @@ class Teacher {
     required this.email,
     required this.status,
   });
+
+  // Factory method to create a Teacher object from JSON
+  factory Teacher.fromJson(Map<String, dynamic> json) {
+    return Teacher(
+      id: json['id'],
+      name: json['name'],
+      cin: json['cin'],
+      email: json['email'],
+      status: json['status'],
+    );
+  }
 }
 
 class TeacherPage extends StatefulWidget {
@@ -26,25 +40,60 @@ class TeacherPage extends StatefulWidget {
 }
 
 class _TeacherPageState extends State<TeacherPage> {
-  final List<Teacher> teachers = List.generate(
-    20,
-    (index) => Teacher(
-      id: index + 1,
-      name: 'Teacher ${index + 1}',
-      cin: 'CIN${index + 100}',
-      email: 'teacher${index + 1}@example.com',
-      status: index % 2 == 0 ? 'Active' : 'Inactive',
-    ),
-  );
-
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _statusController = TextEditingController();
+  List<Teacher> teachers = [];
+  bool isLoading = true; // To track loading state
+  String? errorMessage;
 
   final _formKey = GlobalKey<FormState>();
   String _name = '';
   String _cin = '';
   String _email = '';
   bool _isActive = true;
+
+  // Function to fetch teachers from API
+  Future<void> _fetchTeachers() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString('sessionId');
+
+      if (sessionId == null || sessionId.isEmpty) {
+        setState(() {
+          errorMessage = 'Session ID not found!';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8081/admin/session/$sessionId/teachers'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> teacherData = json.decode(response.body);
+        setState(() {
+          teachers = teacherData.map((data) => Teacher.fromJson(data)).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage =
+              'Failed to fetch teachers: ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error occurred: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTeachers();
+  }
 
   void _addTeacher() {
     _name = '';
@@ -160,8 +209,6 @@ class _TeacherPageState extends State<TeacherPage> {
     );
   }
 
-  late int _btindex = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,82 +222,88 @@ class _TeacherPageState extends State<TeacherPage> {
         ),
         title: const Text('Teachers'),
         centerTitle: true,
-        backgroundColor: Colors.blue, // Blue background
-        foregroundColor: Colors.white, // White text color
-        elevation: 0,
+        backgroundColor: Colors.blue,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          elevation: 5,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-              child: SingleChildScrollView(
-                child: DataTable(
-                  columnSpacing: 20.0, // Adjust column spacing for better visibility
-                  columns: const [
-                    DataColumn(label: Text('ID')),
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Status')),
-                    DataColumn(label: Text('Actions')),
-                  ],
-                  rows: teachers.map((teacher) {
-                    return DataRow(cells: [
-                      DataCell(Text(teacher.id.toString())),
-                      DataCell(Text(teacher.name)),
-                      DataCell(
-                        Text(
-                          teacher.status,
-                          style: TextStyle(
-                            color: teacher.status == 'Active' ? Colors.green : Colors.red,
-                          ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15)),
+                    elevation: 5,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            minWidth: MediaQuery.of(context).size.width),
+                        child: DataTable(
+                          columnSpacing: 20.0,
+                          columns: const [
+                            DataColumn(label: Text('ID')),
+                            DataColumn(label: Text('Name')),
+                            DataColumn(label: Text('Status')),
+                            DataColumn(label: Text('Actions')),
+                          ],
+                          rows: teachers.map((teacher) {
+                            return DataRow(cells: [
+                              DataCell(Text(teacher.id.toString())),
+                              DataCell(Text(teacher.name)),
+                              DataCell(
+                                Text(
+                                  teacher.status,
+                                  style: TextStyle(
+                                    color: teacher.status == 'Active'
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+                              ),
+                              DataCell(Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.green, size: 20),
+                                    onPressed: () {
+                                      // Edit functionality here
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red, size: 20),
+                                    onPressed: () {
+                                      // Delete functionality here
+                                    },
+                                  ),
+                                ],
+                              )),
+                            ]);
+                          }).toList(),
                         ),
                       ),
-                      DataCell(Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.green, size: 20),
-                            onPressed: () {
-                              // Edit functionality here
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                            onPressed: () {
-                              // Delete functionality here
-                            },
-                          ),
-                        ],
-                      )),
-                    ]);
-                  }).toList(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-        ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Teachers'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person), label: 'Teachers'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add_circle, size: 40), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle), label: 'Profile'),
           BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
         ],
-        currentIndex: _btindex,
-        selectedItemColor: Colors.blue, // Blue for selected items
+        currentIndex: 0,
+        selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
-          setState(() {
-            _btindex = index;
-          });
           if (index == 2) {
             _addTeacher();
           }

@@ -2,20 +2,25 @@ import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/firebase_options.dart';
 import 'package:fetprojet/login.dart';
 import 'package:fetprojet/pages/admin/home.dart';
+import 'package:fetprojet/pages/admin/session/session.dart';
 import 'package:fetprojet/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() async {
+ // await dotenv.load(); // Charger le fichier .env
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
  
   var user;
   runApp(
+      
+
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Dashboard(),
+      home: HomePage(),
     )
   );
 }

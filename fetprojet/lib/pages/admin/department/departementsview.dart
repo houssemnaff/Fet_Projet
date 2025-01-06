@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'package:fetprojet/api/departmentapi.dart';
 import 'package:flutter/material.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DepartmentPage extends StatefulWidget {
   const DepartmentPage({super.key});
@@ -11,74 +14,256 @@ class DepartmentPage extends StatefulWidget {
 
 class _DepartmentPageState extends State<DepartmentPage> {
   final TextEditingController _departmentController = TextEditingController();
-  final List<String> _departments = [];
+  final List<Map<String, String>> _departments = []; // Liste des départements avec ID et nom
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // Clé pour le formulaire
+  final departmentapi _depApi = departmentapi(); // Instance de l'API
+@override
+void initState() {
+  super.initState();
+  getAllDepartmentsBySession(); // Appeler la fonction dès que la page est construite
+}
 
-  void _addDepartment() {
-    String departmentName = _departmentController.text.trim();
-    if (departmentName.isNotEmpty) {
-      setState(() {
-        _departments.add(departmentName);
-      });
-      _departmentController.clear();
+  // Récupérer tous les départements par session
+  Future<void> getAllDepartmentsBySession() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+      if (sessionId.isEmpty) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Session ID not found. Please try again.',
+        );
+        return;
+      }
+
+      final response = await _depApi.getAllDepartments(sessionId);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          _departments.clear();
+          _departments.addAll(data.map<Map<String, String>>((item) {
+            return {
+              "departmentId": item['departmentId'].toString(),
+              "departmentName": item['departmentName'].toString(),
+            };
+          }).toList());
+        });
+
+       
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to load departments. Please try again.',
+        );
+      }
+    } catch (e) {
       QuickAlert.show(
         context: context,
-        type: QuickAlertType.success,
-        text: 'Department added successfully',
+        type: QuickAlertType.error,
+        text: 'An error occurred: $e',
       );
     }
   }
 
-  void _editDepartment(int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final TextEditingController editController = TextEditingController(
-          text: _departments[index],
-        );
+  // Ajouter un département
+  Future<void> _addDepartment() async {
+    if (_formKey.currentState!.validate()) {
+      String departmentName = _departmentController.text.trim();
 
-        return AlertDialog(
-          title: const Text("Edit Department"),
-          content: TextField(
-            controller: editController,
-            decoration: const InputDecoration(labelText: "Department Name"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _departments[index] = editController.text.trim();
-                });
-                Navigator.of(context).pop();
-                QuickAlert.show(
-                  context: context,
-                  type: QuickAlertType.success,
-                  text: 'Department updated successfully',
-                );
-              },
-              child: const Text("Save"),
-            ),
-          ],
+      try {
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+        if (sessionId.isEmpty) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            text: 'Session ID not found. Please try again.',
+          );
+          return;
+        }
+
+        final response = await _depApi.addDepartmentToSession(sessionId, departmentName);
+
+        if (response.statusCode == 200) {
+         getAllDepartmentsBySession();
+          _departmentController.clear();
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            text: 'Department added successfully!',
+          );
+        } else {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            text: 'Failed to add department. Please try again.',
+          );
+        }
+      } catch (e) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'An error occurred: $e',
         );
-      },
-    );
+      }
+    }
   }
 
-  void _deleteDepartment(int index) {
-    setState(() {
-      _departments.removeAt(index);
-    });
+  // Modifier un département
+ Future<void> _editDepartment(int index) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+  if (sessionId.isEmpty) {
     QuickAlert.show(
       context: context,
-      type: QuickAlertType.warning,
-      text: 'Department deleted successfully',
+      type: QuickAlertType.error,
+      text: 'Session ID not found. Please try again.',
+    );
+    return;
+  }
+
+  String? departmentId = _departments[index]['departmentId'];
+  if (departmentId == null || departmentId.isEmpty) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      text: 'Invalid department ID. Please try again.',
+    );
+    return;
+  }
+
+  // Préparer le champ de modification
+  final TextEditingController editController = TextEditingController(
+    text: _departments[index]['departmentName'],
+  );
+
+  // Afficher une boîte de dialogue pour modifier le nom
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Edit Department"),
+        content: TextField(
+          controller: editController,
+          decoration: const InputDecoration(labelText: "Department Name"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Fermer la boîte de dialogue
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              String newName = editController.text.trim();
+
+              if (newName.isNotEmpty) {
+                try {
+                  // Envoyer la mise à jour au serveur
+                  final response = await _depApi.updateDepartment(sessionId, departmentId, newName);
+
+                  if (response.statusCode == 200) {
+                    // Mettre à jour la liste localement
+                    setState(() {
+                      _departments[index]['departmentName'] = newName;
+                    });
+
+                    Navigator.of(context).pop(); // Fermer la boîte de dialogue
+
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.success,
+                      text: 'Department updated successfully.',
+                    );
+                  } else {
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.error,
+                      text: 'Failed to update department. Please try again.',
+                    );
+                  }
+                } catch (e) {
+                  QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.error,
+                    text: 'An error occurred: $e',
+                  );
+                }
+              } else {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType.error,
+                  text: 'Name cannot be empty.',
+                );
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      );
+    },
+  );
+}
+// Supprimer un département
+Future<void> _deleteDepartment(String? depId) async {
+  if (depId == null || depId.isEmpty) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      text: 'Invalid department ID. Please try again.',
+    );
+    return;
+  }
+
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+    if (sessionId.isEmpty) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'Session ID not found. Please try again.',
+      );
+      return;
+    }
+
+    final response = await _depApi.deleteDepartment(sessionId, depId);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _departments.removeWhere((dept) => dept['departmentId'] == depId);
+      });
+
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        text: 'Department deleted successfully.',
+      );
+    } else {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'Failed to delete department. Please try again.',
+      );
+    }
+  } catch (e) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      text: 'An error occurred: $e',
     );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,86 +272,62 @@ class _DepartmentPageState extends State<DepartmentPage> {
         title: const Text("Departments"),
         centerTitle: true,
         backgroundColor: Colors.blue,
-        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Section
-           Container(
+            // Header
+            Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Colors.blue,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(30),
-                ),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
               ),
               child: const Column(
                 children: [
-                  // App Header
                   Text(
-                    'Enregistrement des département',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'Sélectionnez un département et enregistrez un class',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                     // textAlign: TextAlign.center,
-                    ),
+                    'Enregistrement des départements',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // Department Input Section
+            // Formulaire d'ajout
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _departmentController,
-                      decoration: const InputDecoration(
-                        labelText: "Department Name",
-                        border: OutlineInputBorder(),
+              child: Form(
+                key: _formKey,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _departmentController,
+                        decoration: const InputDecoration(
+                          labelText: "Department Name",
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a department name';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _addDepartment,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      minimumSize: const Size(100, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: _addDepartment,
+                      child: const Text("Add"),
                     ),
-                    child: const Text("Add"),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // Department List Section
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'List of Departments:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 10),
-            // List of added departments
+            // Liste des départements
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _departments.isNotEmpty
@@ -176,12 +337,9 @@ class _DepartmentPageState extends State<DepartmentPage> {
                       itemCount: _departments.length,
                       itemBuilder: (context, index) {
                         return Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
                           child: ListTile(
-                            title: Text(_departments[index]),
+                            title: Text(_departments[index]['departmentName'] ?? ''),
+                            
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -191,17 +349,15 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _deleteDepartment(index),
-                                ),
+                      onPressed: () => _deleteDepartment(_departments[index]['departmentId']),
+                                  ),
                               ],
                             ),
                           ),
                         );
                       },
                     )
-                  : const Center(
-                      child: Text("No departments added yet."),
-                    ),
+                  : const Center(child: Text("No departments added yet.")),
             ),
           ],
         ),

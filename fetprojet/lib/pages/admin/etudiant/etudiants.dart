@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'package:fetprojet/api/departmentapi.dart';
+import 'package:fetprojet/api/etudiantapi.dart';
+import 'package:fetprojet/api/groupsapi.dart';
 import 'package:flutter/material.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:fetprojet/components/drawer.dart';
+import 'package:http/http.dart' as http;
+import 'package:quickalert/models/quickalert_type.dart';
+import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Etudiant {
-  final int id;
+  final String id;
   final String name;
   final String cin;
   final String email;
@@ -17,211 +23,256 @@ class Etudiant {
 }
 
 class EtudiantPage extends StatefulWidget {
-  const EtudiantPage({super.key});
+  const EtudiantPage({Key? key}) : super(key: key);
 
   @override
   _EtudiantPageState createState() => _EtudiantPageState();
 }
 
 class _EtudiantPageState extends State<EtudiantPage> {
-  final List<Etudiant> teachers = List.generate(
-    20,
-    (index) => Etudiant(
-      id: index + 1,
-      name: 'Etudiant ${index + 1}',
-      cin: 'CIN${index + 100}',
-      email: 'Etudiant${index + 1}@example.com',
-    ),
-  );
+  final String baseUrl = 'http://10.0.2.2:8081'; // Remplacez par l'URL appropriée
+  String? selectedDepartmentId;
+  String? selectedGroupId;
+  List<Map<String, String>> departments = [];
+  List<Map<String, String>> groups = [];
+  List<Etudiant> students = [];
+  final classapi _classApi = classapi();
+  final departmentapi _depApi = departmentapi();
+  final EtudiantApi etapi = EtudiantApi();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _cinController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-
-  final _formKey = GlobalKey<FormState>();
-  String _name = '';
-  String _cin = '';
-  String _email = '';
-
-  void _addEtudiant() {
-    _name = '';
-    _cin = '';
-    _email = '';
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Etudiant'),
-          content: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  onChanged: (value) => _name = value,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a name';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _cinController,
-                  decoration: const InputDecoration(labelText: 'CIN'),
-                  onChanged: (value) => _cin = value,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a CIN';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  onChanged: (value) => _email = value,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an email';
-                    }
-                    if (!RegExp(
-                      r"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+(.[a-zA-Z]+)?$",
-                    ).hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    teachers.add(Etudiant(
-                      id: teachers.length + 1,
-                      name: _name,
-                      cin: _cin,
-                      email: _email,
-                    ));
-                  });
-                  Navigator.of(context).pop();
-                  QuickAlert.show(
-                    context: context,
-                    type: QuickAlertType.success,
-                    text: 'Insertion Completed Successfully!',
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    fetchDepartments();
   }
 
-  late int _btindex = 0;
+  // Fetch departments from the API
+  Future<void> fetchDepartments() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+      final response = await _depApi.getAllDepartments(sessionId);
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          departments = data.map<Map<String, String>>((item) {
+            return {
+              "departmentId": item['departmentId'].toString(),
+              "departmentName": item['departmentName'].toString(),
+            };
+          }).toList();
+        });
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to load departments. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred: $e',
+      );
+    }
+  }
+
+  Future<void> deletestudent(String studentId) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd";
+      if (sessionId != null && selectedDepartmentId != null && selectedGroupId != null) {
+        final result = await etapi.deleteStudentFromGroup(sessionId, selectedDepartmentId!, selectedGroupId!, studentId);
+        if (result == 'Student deleted successfully') {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            text: 'Student deleted successfully!',
+          );
+          fetchStudents(selectedGroupId!); // Refresh the student list after deletion
+        } else {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            text: result,
+          );
+        }
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Session, Department, or Group not found.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred while deleting student: $e',
+      );
+    }
+  }
+
+  // Fetch groups based on department
+  Future<void> fetchGroups(String departmentId) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+      final response = await _classApi.fetchGroupsByDepartment(sessionId, departmentId);
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        setState(() {
+          groups = data.map<Map<String, String>>((group) {
+            return {
+              "groupId": group['groupId'].toString(),
+              "groupName": group['groupName'].toString(),
+            };
+          }).toList();
+        });
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to fetch groups. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred while fetching groups: $e',
+      );
+    }
+  }
+
+  // Fetch students for a group
+  Future<void> fetchStudents(String groupId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionId = prefs.getString('sessionId');
+      final departmentId = selectedDepartmentId;
+
+      if (sessionId == null || departmentId == null) {
+        print('Session ID or Department ID not found in SharedPreferences');
+        return;
+      }
+
+      final response = await http.get(Uri.parse('$baseUrl/admin/session/$sessionId/departments/$departmentId/groups/$groupId'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          students = (data['students'] as List).map((student) {
+            return Etudiant(
+              id: student['id'].toString(),
+              name: student['name'].toString(),
+              cin: student['cin'].toString(),
+              email: student['email'].toString(),
+            );
+          }).toList();
+        });
+      } else {
+        print('Failed to fetch students: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching students: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const DrawerPage(),
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text('Etudiants'),
+        title: const Text('Gestion des Étudiants'),
         centerTitle: true,
-        backgroundColor: Colors.blue, // Blue background
-        foregroundColor: Colors.white, // White text color
-        elevation: 0,
+        backgroundColor: Colors.blue,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          elevation: 5,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-              child: SingleChildScrollView(
-                child: DataTable(
-                  columnSpacing: 20.0,
-                  columns: const [
-                    DataColumn(label: Text('ID')),
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('CIN')),
-                    DataColumn(label: Text('Actions')),
-                  ],
-                  rows: teachers.map((etudiant) {
-                    return DataRow(cells: [
-                      DataCell(Text(etudiant.id.toString())),
-                      DataCell(Text(etudiant.name)),
-                      DataCell(Text(etudiant.cin)),
-                      DataCell(Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.green, size: 20),
-                            onPressed: () {
-                              // Edit functionality here
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                            onPressed: () {
-                              // Delete functionality here
-                            },
-                          ),
-                        ],
-                      )),
-                    ]);
-                  }).toList(),
-                ),
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Dropdown pour sélectionner le département
+            DropdownButton<String>(
+              value: selectedDepartmentId,
+              hint: const Text('Sélectionner le Département'),
+              onChanged: (value) {
+                setState(() {
+                  selectedDepartmentId = value;
+                  selectedGroupId = null; // Réinitialiser le groupe lors du changement de département
+                  groups = []; // Réinitialiser les groupes
+                  students = []; // Réinitialiser les étudiants
+                });
+                fetchGroups(value!); // Récupérer les groupes pour le département sélectionné
+              },
+              items: departments.map((department) {
+                return DropdownMenuItem<String>(
+                  value: department['departmentId'],
+                  child: Text(department['departmentName']!),
+                );
+              }).toList(),
             ),
-          ),
+
+            const SizedBox(height: 20),
+
+            // Dropdown pour sélectionner le groupe
+            if (selectedDepartmentId != null)
+              DropdownButton<String>(
+                value: selectedGroupId,
+                hint: const Text('Sélectionner le Groupe'),
+                onChanged: (value) {
+                  setState(() {
+                    selectedGroupId = value;
+                  });
+                  fetchStudents(value!); // Récupérer les étudiants pour le groupe sélectionné
+                },
+                items: groups.map((group) {
+                  return DropdownMenuItem<String>(
+                    value: group['groupId'],
+                    child: Text(group['groupName']!),
+                  );
+                }).toList(),
+              ),
+
+            const SizedBox(height: 16.0),
+
+            // Liste des étudiants
+            Expanded(
+              child: students.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: students.length,
+                      itemBuilder: (context, index) {
+                        final student = students[index];
+                        return Card(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          child: ListTile(
+                            title: Text(student.name),
+                            subtitle: Text('CIN: ${student.cin}\nEmail: ${student.email}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                deletestudent(student.id); // Appeler la méthode de suppression
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(selectedGroupId == null
+                          ? 'Veuillez sélectionner un groupe pour afficher les étudiants.'
+                          : 'Aucun étudiant trouvé pour ce groupe.'),
+                    ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Teachers'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
-        ],
-        currentIndex: _btindex,
-        selectedItemColor: Colors.blue, // Blue for selected items
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          setState(() {
-            _btindex = index;
-          });
-          if (index == 2) {
-            _addEtudiant();
-          }
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Fonction pour ajouter un étudiant
         },
+        child: const Icon(Icons.add),
       ),
     );
   }

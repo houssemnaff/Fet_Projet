@@ -1,6 +1,12 @@
+import 'package:fetprojet/api/departmentapi.dart';
+import 'package:fetprojet/api/groupsapi.dart';
+import 'package:flutter/material.dart';
 import 'package:fetprojet/pages/admin/prof/telechargerprof.dart';
 import 'package:fetprojet/pages/admin/etudiant/uplodfileetudiant.dart';
-import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quickalert/quickalert.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class DepartmentClassPage extends StatefulWidget {
   const DepartmentClassPage({super.key});
@@ -10,28 +16,206 @@ class DepartmentClassPage extends StatefulWidget {
 }
 
 class _DepartmentClassPageState extends State<DepartmentClassPage> {
-  final List<String> departments = [
-    'Computer Science',
-    'Mathematics',
-    'Physics'
-  ];
+  List<Map<String, String>> _departments = [];
   String? selectedDepartment;
   TextEditingController classNameController = TextEditingController();
+  TextEditingController nbrplace = TextEditingController();
+
   List<Map<String, String>> addedClasses = [];
+  List<Map<String, dynamic>> groups = [];
+  final departmentapi _depApi = departmentapi();
+  final classapi _classApi = classapi();
+
+  @override
+  void initState() {
+    super.initState();
+    getAllDepartmentsBySession();
+  }
+
+  Future<void> getAllDepartmentsBySession() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+      if (sessionId.isEmpty) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Session ID not found. Please try again.',
+        );
+        return;
+      }
+
+      final response = await _depApi.getAllDepartments(sessionId);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          _departments.clear();
+          _departments.addAll(data.map<Map<String, String>>((item) {
+            return {
+              "departmentId": item['departmentId'].toString(),
+              "departmentName": item['departmentName'].toString(),
+            };
+          }).toList());
+        });
+
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to load departments. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred: $e',
+      );
+    }
+  }
+
+  Future<void> fetchGroups() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String sessionId = prefs.getString('sessionId') ?? '6767ed5018e2bd7ea42682c7';
+      
+      if (selectedDepartment == null) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Please select a department.',
+        );
+        return;
+      }
+
+      final response = await _classApi.fetchGroupsByDepartment(sessionId, selectedDepartment!);
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        setState(() {
+          groups.clear();
+          groups.addAll(data.map<Map<String, dynamic>>((group) {
+            return {
+              "groupId": group['groupId'].toString(),
+              "groupName": group['groupName'].toString(),
+              "numberGroups": group['numberGroups'], 
+            };
+          }).toList());
+        });
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to fetch groups. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred while fetching groups: $e',
+      );
+    }
+  }
+
+ Future<void> addClass() async {
+  if (selectedDepartment != null && classNameController.text.isNotEmpty && nbrplace.text.isNotEmpty) {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String sessionId = prefs.getString('sessionId') ?? '6767ed5018e2bd7ea42682c7';
+      String departmentId = selectedDepartment!;
+      String groupName = classNameController.text;
+      int numberGroups = int.parse(nbrplace.text); 
+
+      final response = await _classApi.createGroup(sessionId, departmentId, groupName, numberGroups);
+
+      if (response.statusCode == 200) {
+        // Clear the input fields
+        classNameController.clear();
+        nbrplace.clear();
+
+        // Call fetchGroups to refresh the list of groups
+        await fetchGroups();
+
+        // Clear the selected department
+        setState(() {
+          selectedDepartment = null;
+        });
+
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          text: 'Class successfully added.',
+        );
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to add the class. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred while adding the class: $e',
+      );
+    }
+  } else {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      text: 'Please select a department, enter a class name, and provide the number of places.',
+    );
+  }
+}
+  // Function to delete class
+  Future<void> deleteClass(String groupId) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String sessionId = prefs.getString('sessionId') ?? '6767ed5018e2bd7ea42682c7';
+
+      final response = await _classApi.deleteClass(sessionId, selectedDepartment!, groupId);
+
+      if (response.statusCode == 200) {
+        // Successfully deleted
+        fetchGroups(); // Refresh the groups
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          text: 'Group deleted successfully.',
+        );
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'Failed to delete the group. Please try again.',
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'An error occurred while deleting the group: $e',
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        
         backgroundColor: Colors.blue,
         elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Section
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
@@ -42,9 +226,8 @@ class _DepartmentClassPageState extends State<DepartmentClassPage> {
               ),
               child: const Column(
                 children: [
-                  // App Header
                   Text(
-                    'Enregistrement des class',
+                    'Enregistrement des classes',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -53,18 +236,16 @@ class _DepartmentClassPageState extends State<DepartmentClassPage> {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'Sélectionnez un département et enregistrez un class',
+                    'Sélectionnez un département et enregistrez une classe',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
-                     // textAlign: TextAlign.center,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            // Department dropdown
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: DropdownButton<String>(
@@ -74,32 +255,37 @@ class _DepartmentClassPageState extends State<DepartmentClassPage> {
                   setState(() {
                     selectedDepartment = value;
                   });
+                  fetchGroups();  // Call fetchGroups when a department is selected
                 },
-                items: departments.map((department) {
+                items: _departments.map((department) {
                   return DropdownMenuItem(
-                    value: department,
-                    child: Text(department),
+                    value: department['departmentId'],
+                    child: Text(department['departmentName']!),
                   );
                 }).toList(),
               ),
             ),
             const SizedBox(height: 20),
-
-            // Class name input
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 controller: classNameController,
-                decoration: const InputDecoration(labelText: 'Nom du class'),
+                decoration: const InputDecoration(labelText: 'Nom de la classe'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: nbrplace,
+                decoration: const InputDecoration(labelText: 'Nombre de places'),
+                keyboardType: TextInputType.number,
               ),
             ),
             const SizedBox(height: 20),
-
-            // Register button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton(
-                onPressed: _registerClass,
+                onPressed: addClass,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   minimumSize: const Size(double.infinity, 50),
@@ -107,92 +293,39 @@ class _DepartmentClassPageState extends State<DepartmentClassPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text('Enregistrer le class'),
+                child: const Text('Enregistrer la classe'),
               ),
             ),
             const SizedBox(height: 20),
-
-            // Available Classes Section
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'class Disponibles:',
+                'Groupes existants:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 10),
-            // List of added classes
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: addedClasses.length,
-                itemBuilder: (context, index) {
-                  final classInfo = addedClasses[index];
-                  return Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      title: Text('${classInfo['class']}'),
-                      subtitle: Text('Département: ${classInfo['department']}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _editClass(index),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteClass(index),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.people, color: Colors.green),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => FileUploadPage()),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: groups.length,
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                return ListTile(
+                  title: Text(group['groupName'] ?? ''),
+                  subtitle: Text('Places disponibles: ${group['numberGroups']}'),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      // Call deleteClass function
+                      deleteClass(group['groupId']);
+                    },
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _registerClass() {
-    if (selectedDepartment != null && classNameController.text.isNotEmpty) {
-      setState(() {
-        addedClasses.add({
-          'class': classNameController.text,
-          'department': selectedDepartment!,
-        });
-      });
-      classNameController.clear();
-    }
-  }
-
-  void _editClass(int index) {
-    classNameController.text = addedClasses[index]['class']!;
-    selectedDepartment = addedClasses[index]['department'];
-    setState(() {
-      addedClasses.removeAt(index);
-    });
-  }
-
-  void _deleteClass(int index) {
-    setState(() {
-      addedClasses.removeAt(index);
-    });
   }
 }

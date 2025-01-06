@@ -1,10 +1,17 @@
+import 'dart:convert';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:fetprojet/authservice.dart';
 import 'package:fetprojet/pages/admin/session/session.dart';
+import 'package:fetprojet/pages/etudiant/dashboardetudiant.dart';
+import 'package:fetprojet/pages/prof/dashbordprof.dart';
 import 'package:fetprojet/signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_button/sign_in_button.dart';
+import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -205,15 +212,44 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _login() async {
+ Future<void> _login() async {
+        final String apiUrl =  'http://10.0.2.2:8081';
+
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState?.save();
       try {
         User? user =
             await _authService.signInWithEmailAndPassword(_email!, _password!);
         if (user != null) {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => Session(user: user)));
+          
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+        final Uri url = Uri.parse('$apiUrl/roles/${user.uid}'); // Access id directly
+          final response = await http.get(url);
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            if (data['roleUser'] == 'Admin') {
+              await prefs.setString('role', 'Admin');
+              await prefs.setString('userId', user.uid);
+               await prefs.setString('userEmail', user.email!);
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => Session()));
+            } else if (data['roleUser'] == 'Teacher') {
+              await prefs.setString('role', 'Teacher');
+              await prefs.setString('userId', user.uid);
+              await prefs.setString('userEmail', user.email!);
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => Session()));
+            } else if (data['roleUser'] == 'student') {
+              await prefs.setString('role', 'student');
+              await prefs.setString('userId', user.uid);
+              await prefs.setString('userEmail', user.email!);
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => Session()));
+            }
+          } else {
+            throw Exception(
+                'Failed to load articles. Status code: ${response.statusCode}');
+          }
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,15 +260,46 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildGoogleSignInButton() {
+        final String apiUrl =  'http://10.0.2.2:8081';
+
     return SignInButton(
       Buttons.google,
       onPressed: () async {
         try {
           User? user = await _authService.signInWithGoogle();
           if (user != null) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Session(user: user)));
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+final Uri url = Uri.parse('$apiUrl/roles/${user.uid}'); // Assurez-vous que le port correspond à celui utilisé par votre backend
+          final response = await http.get(url);
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            if (data['roleUser'] == 'Admin') {
+              await prefs.setString('role', 'Admin');
+              await prefs.setString('userId', user.uid);
+                await prefs.setString('userEmail', user.email!);
+
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => Session()));
+            } else if (data['roleUser'] == 'Teacher') {
+              await prefs.setString('role', 'Teacher');
+              await prefs.setString('userId', user.uid);
+                             await prefs.setString('userEmail', user.email!);
+
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => MyWidget()));
+            } else if (data['roleUser'] == 'student') {
+              await prefs.setString('role', 'student');
+              await prefs.setString('userId', user.uid);
+                             await prefs.setString('userEmail', user.email!);
+
+              Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => DashEtudiant()));
+            }
+          } else {
+            throw Exception(
+                'Failed to load articles. Status code: ${response.statusCode}');
           }
+        }
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error signing in with Google: $e')),

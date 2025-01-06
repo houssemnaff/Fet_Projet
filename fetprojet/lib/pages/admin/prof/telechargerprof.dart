@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:fetprojet/api/profapi.dart'; // Import the profapi class
 import 'package:fetprojet/components/drawer.dart';
 import 'package:fetprojet/pages/admin/prof/profs.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FileUploadPageprof extends StatefulWidget {
   const FileUploadPageprof({super.key});
@@ -17,6 +20,9 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
   double uploadProgress = 0.0;
   String? fileName;
   bool isUploading = false;
+  File? selectedFile; // Variable to store the selected file
+
+  final profapi _profApi = profapi(); // Initialize profapi
 
   Future<void> selectFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -24,34 +30,63 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
     if (result != null) {
       setState(() {
         fileName = result.files.single.name;
-        uploadProgress = 0.0;
-        isUploading = true;
+        selectedFile = File(result.files.single.path!); // Save the selected file
       });
-      uploadFile();
     } else {
       QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
-        text: 'An error occurred!',
+        text: 'An error occurred while selecting the file!',
       );
     }
   }
 
   Future<void> uploadFile() async {
+    if (selectedFile == null) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'No file selected!',
+      );
+      return;
+    }
+
+    setState(() {
+      isUploading = true;
+      uploadProgress = 0.0;
+    });
+
+    // Simulate upload progress
     for (int i = 0; i <= 100; i++) {
       await Future.delayed(const Duration(milliseconds: 50));
       setState(() {
         uploadProgress = i / 100;
       });
     }
+
+    // Call the API to upload the file
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String sessionId = prefs.getString('sessionId') ?? '';
+    if (sessionId.isNotEmpty) {
+      String response = await _profApi.addprofTosessionWithFile(sessionId, selectedFile!);
+      QuickAlert.show(
+        context: context,
+        type: response.contains('successfully') ? QuickAlertType.success : QuickAlertType.error,
+        text: response.contains('successfully') ? 'File uploaded successfully!' : 'Failed to upload file.',
+      );
+    } else {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'Session ID not found!',
+      );
+    }
+
     setState(() {
       isUploading = false;
+      fileName = null;
+      selectedFile = null;
     });
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.success,
-      text: 'Insertion Completed Successfully!',
-    );
   }
 
   @override
@@ -80,7 +115,6 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
                 ),
                 child: const Column(
                   children: [
-                    // App Header
                     Text(
                       'Upload File',
                       style: TextStyle(
@@ -91,7 +125,7 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
                     ),
                     SizedBox(height: 5),
                     Text(
-                      'Drag your files or browse to start uploading.',
+                      'Select your file and click save to upload.',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white70,
@@ -116,26 +150,8 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
                       const Icon(Icons.folder, size: 40, color: Colors.blue),
                       const SizedBox(height: 10),
                       const Text(
-                        'Drag your file(s) to start uploading\nOR',
+                        'Select your file to upload',
                         textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: selectFile,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(150, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          backgroundColor: Colors.blue,
-                        ),
-                        child: const Text(
-                          'Browse Files',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -143,9 +159,45 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
               ),
               const SizedBox(height: 20),
 
+              // Display File Name after Selection
+              if (fileName != null) ...[
+                ListTile(
+                  leading: const Icon(Icons.insert_drive_file, color: Colors.yellow),
+                  title: Text(fileName!),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.cancel),
+                    onPressed: () {
+                      setState(() {
+                        fileName = null;
+                        selectedFile = null;
+                      });
+                    },
+                  ),
+                ),
+              ],
+
+              // Save Button
+              ElevatedButton(
+                onPressed: fileName != null ? uploadFile : null,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(150, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  backgroundColor: Colors.blue,
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // Upload Progress Section
               if (isUploading) ...[
-                const SizedBox(height: 20),
                 LinearPercentIndicator(
                   lineHeight: 8.0,
                   percent: uploadProgress,
@@ -155,60 +207,6 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
                 const SizedBox(height: 10),
                 Text(
                   'Uploading... ${(uploadProgress * 100).toStringAsFixed(0)}%',
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.pause_circle_outline),
-                      onPressed: () {
-                        // Pause functionality (if needed)
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.cancel,
-                        color: Colors.red,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isUploading = false;
-                          uploadProgress = 0.0;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
-
-              // Display File Name after Selection
-              if (!isUploading && fileName != null) ...[
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const Icon(Icons.insert_drive_file, color: Colors.yellow),
-                  title: Text(fileName!),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.cancel),
-                    onPressed: () {
-                      setState(() {
-                        fileName = null;
-                      });
-                    },
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Code to save the file if needed
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: const Text('Save'),
                 ),
               ],
 
@@ -226,7 +224,7 @@ class _FileUploadPageState extends State<FileUploadPageprof> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => TeacherPage()),
+                        MaterialPageRoute(builder: (context) => const TeacherPage()),
                       );
                     },
                     child: const Text("All Teachers"),

@@ -5,10 +5,11 @@ import 'package:fetprojet/pages/admin/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/src/response.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionForm extends StatefulWidget {
-  const SessionForm({super.key, required this.user});
-  final User user;
+  const SessionForm({super.key});
+  
 
   @override
   _SessionFormState createState() => _SessionFormState();
@@ -60,10 +61,23 @@ class _SessionFormState extends State<SessionForm> {
               TextFormField(
                 decoration: const InputDecoration(labelText: "Year"),
                 onChanged: (value) => year = value,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Year is required';
+                  }
+                  return null;
+                },
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: "University Name"),
+                decoration:
+                    const InputDecoration(labelText: "University Name"),
                 onChanged: (value) => universityName = value,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'University name is required';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -131,35 +145,49 @@ class _SessionFormState extends State<SessionForm> {
   }
 
   void sendData() async {
-    // Préparer les données du formulaire
-    final formData = {
-      "year": year,
-      "universityName": universityName,
-      "timeBreakStart": timeBreakStart?.format(context),
-      "timeBreakEnd": timeBreakEnd?.format(context),
-      "timeDayStart": timeDayStart?.format(context),
-      "timeDayEnd": timeDayEnd?.format(context),
-      "activeDays": activeDays,
-    };
+  // Préparer les données du formulaire avec valeurs par défaut
+  final formData = {
+    "year": year ?? "2025", // Valeur par défaut si null
+    "universityName": universityName ?? "Default University",
+    "timeBreakStart": timeBreakStart?.format(context) ?? "08:00 AM",
+    "timeBreakEnd": timeBreakEnd?.format(context) ?? "09:00 AM",
+    "timeDayStart": timeDayStart?.format(context) ?? "08:00 AM",
+    "timeDayEnd": timeDayEnd?.format(context) ?? "05:00 PM",
+    "activeDays": activeDays.isNotEmpty ? activeDays : ["Monday"], // Par défaut
+  };
 
-    // Utiliser ApiService pour envoyer les données
+  print("Form Data: $formData");
+
+  try {
     ApiService apiService = ApiService();
     Response? response = await apiService.addSession(formData);
-
-    if (response != null && response.statusCode == 201) {
+    int stco=response!.statusCode;
+    print("response $stco");
+    if (response != null && response.statusCode == 201 ) {
       final responseData = json.decode(response.body);
-      final String sessionId = responseData["id"]; // Récupérer l'ID de la session
+      final String sessionId = responseData["sessionId"];
       print("Session created successfully with ID: $sessionId");
 
-      // Associer la session à l'utilisateur
+      // Enregistrer sessionId dans SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString("sessionId", sessionId);
+
+      String? userId = prefs.getString("userId");
+      if (userId == null) {
+        print("User ID not found in SharedPreferences.");
+        return;
+      }
+
       Response? updateResponse = await apiService.updateUserRolesAndSessions(
-        widget.user.uid,
-        "SuperAdmin", // Vous pouvez personnaliser le rôle ici
-        [sessionId], // Ajouter l'ID de la session créée
+        userId,
+        "Admin",
+        [sessionId],
       );
 
       if (updateResponse != null && updateResponse.statusCode == 200) {
         print("User roles and sessions updated successfully!");
+
+        // Naviguer vers le tableau de bord
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Dashboard()),
@@ -170,5 +198,9 @@ class _SessionFormState extends State<SessionForm> {
     } else {
       print("Failed to create session.");
     }
+  } catch (e) {
+    print("Error occurred: $e");
   }
+}
+
 }

@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Base URL from environment variables
-  String get baseUrl => dotenv.get('API_BASE_URL');
+ // String get baseUrl => dotenv.get('API_BASE_URL');
+  //http://localhost:8081/admin
+  //String  baseUrl ="http://localhost:8081";
+  final String baseUrl =  'http://10.0.2.2:8081';
 
   // Add a new session
  Future<http.Response?> addSession(Map<String, dynamic> sessionData) async {
@@ -25,20 +28,21 @@ class ApiService {
 
 
   // Fetch available sessions (this will give a list of all sessions)
-  Future<List<Map<String, dynamic>>> fetchSessions() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/admin/sessions'));
-      
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data);
-      } else {
-        throw Exception('Failed to load sessions');
-      }
-    } catch (e) {
-      throw Exception('Failed to load sessions: $e');
+  Future<Map<String, dynamic>> fetchSessions(userId) async {
+  try {
+    final response = await http.get(Uri.parse('$baseUrl/roles/$userId'));
+print("user session $response");
+    if (response.statusCode == 200) {
+      return json.decode(response.body); 
+      // Retourne un Map<String, dynamic>
+    } else {
+      throw Exception('Failed to load sessions');
     }
+  } catch (e) {
+    throw Exception('Failed to load sessions: $e');
   }
+}
+
 
   // Fetch session details by session ID
   Future<Map<String, dynamic>> fetchSessionDetails(String sessionId) async {

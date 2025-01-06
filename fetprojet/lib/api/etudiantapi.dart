@@ -1,79 +1,66 @@
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class EtudiantApi {
-  // Base URL static pour permettre l'accès dans les méthodes statiques
-  static String get baseUrl {
-    final baseUrll = dotenv.get('API_BASE_URL', fallback: '');
-    if (baseUrll.isEmpty) {
-      throw Exception('API_BASE_URL is not set in .env file');
-    }
-    return '$baseUrll/admin/session/672d087f98441d6263ce563a/departments/4fb595c5-da9b-42ed-8781-92594760b71c/groups/e7127c18-7ca0-47fc-a881-241d4345d9f7/students';
-  }
+  final String baseUrl =  'http://10.0.2.2:8081';
+  //String baseUrl = "http://localhost:8081/admin";
 
-  static Future<List<Map<String, dynamic>>> getStudents() async {
-    final response = await http.get(Uri.parse(baseUrl));
+  // Ajouter un étudiant avec fichier
+  Future<String> addStudentToGroupWithFile(String sessionId, String departmentId, String groupId, File studentFile) async {
+    try {
+      // Définir l'URL pour le point de terminaison de téléchargement du fichier
+      var uri = Uri.parse(
+        '$baseUrl/admin/session/$sessionId/departments/$departmentId/groups/$groupId/students/upload',
+      );
 
-    if (response.statusCode == 200) {
-      return List<Map<String, dynamic>>.from(json.decode(response.body));
-    } else {
-      throw Exception('Failed to load students: ${response.reasonPhrase}');
-    }
-  }
+      // Créer une MultipartRequest pour gérer le téléchargement du fichier
+      var request = http.MultipartRequest('POST', uri)
+        ..files.add(await http.MultipartFile.fromPath('file', studentFile.path));
 
-  static Future<void> addStudent(Map<String, dynamic> studentData) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(studentData),
-    );
+      // Envoyer la requête
+      var response = await request.send();
 
-    if (response.statusCode != 201) {
-      throw Exception('Failed to add student: ${response.reasonPhrase}');
-    }
-  }
-// uplode student file
-  static Future<void> uploadFile(http.MultipartFile file) async {
-    final uri = Uri.parse('$baseUrl/upload');
-    final request = http.MultipartRequest('POST', uri);
-    request.files.add(file);
+      // Lire le corps de la réponse
+      String responseBody = await response.stream.bytesToString();
 
-    final response = await request.send();
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to upload file: ${response.reasonPhrase}');
-    }
-  }
-// update
-  static Future<void> updateStudent(String id, Map<String, dynamic> studentData) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(studentData),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to update student: ${response.reasonPhrase}');
-    }
-  }
-// delete student
-  static Future<void> deleteStudent(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to delete student: ${response.reasonPhrase}');
+      // Vérifier si le statut de la réponse est 200 (succès)
+      if (response.statusCode == 200) {
+        print('Student added to group successfully!');
+        return responseBody; // Retourner le corps de la réponse en cas de succès
+      } else {
+        print('Failed to add student to group: ${response.statusCode}');
+        return 'Failed to add student: ${response.statusCode}'; // Retourner le message d'échec
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+      return 'Error occurred: $e'; // Retourner le message d'erreur
     }
   }
 
-// get student par id 
-  static Future<Map<String, dynamic>> getStudent(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl/$id'));
+  // Supprimer un étudiant d'un groupe
+  Future<String> deleteStudentFromGroup(String sessionId, String departmentId, String groupId, String studentId) async {
+    try {
+      // Définir l'URL pour le point de terminaison de suppression de l'étudiant
+      var uri = Uri.parse(
+        '$baseUrl/admin/session/$sessionId/departments/$departmentId/groups/$groupId/students/$studentId',
+      );
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to fetch student details: ${response.reasonPhrase}');
+      // Envoyer une requête HTTP DELETE
+      var response = await http.delete(uri);
+
+      // Vérifier si la réponse a un statut 200 (succès)
+      if (response.statusCode == 200) {
+        print('Student deleted from group successfully!');
+        return 'Student deleted successfully'; // Retourner un message de succès
+      } else {
+        print('Failed to delete student: ${response.statusCode}');
+        return 'Failed to delete student: ${response.statusCode}'; // Retourner un message d'échec
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+      return 'Error occurred: $e'; // Retourner le message d'erreur
     }
   }
 }

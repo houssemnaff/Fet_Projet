@@ -13,7 +13,7 @@ class DrawerPage extends StatelessWidget {
     final List<Map<String, dynamic>> drawerItems = [
       {"icon": Icons.dashboard, "title": "Overview", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()))},
       {"icon": Icons.school, "title": "Department",  "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => DepartmentPage()))},
-      {"icon": Icons.access_time, "title": "Session", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  Dashboard()))},
+      {"icon": Icons.access_time, "title": "Session", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  Session()))},
       {"icon": Icons.account_circle, "title": "Etudiant", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  EtudiantPage()))},
       {"icon": Icons.person_outline, "title": "Teacher",  "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  TeacherPage()))},
       {"icon": Icons.calendar_today, "title": "Emploi", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()))},
