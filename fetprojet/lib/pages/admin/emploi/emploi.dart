@@ -1,22 +1,84 @@
+import 'dart:convert'; // For JSON encoding/decoding
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http; // Import the http package
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:quickalert/quickalert.dart'; // Import QuickAlert package
 
-class ScheduleManagementPage extends StatelessWidget {
+class ScheduleManagementPage extends StatefulWidget {
   const ScheduleManagementPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Données fictives pour l'exemple
-    final List<Map<String, String>> schedules = [
-      {"title": "Cours de Mathématiques", "time": "08:00 - 10:00", "day": "Lundi"},
-      {"title": "Cours de Physique", "time": "10:15 - 12:15", "day": "Mardi"},
-      {"title": "Cours de Chimie", "time": "14:00 - 16:00", "day": "Mercredi"},
-      {"title": "Cours d'Informatique", "time": "09:00 - 11:00", "day": "Jeudi"},
-    ];
+  _ScheduleManagementPageState createState() => _ScheduleManagementPageState();
+}
 
+class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
+  // Function to fetch sessionId from SharedPreferences
+  Future<String?> getSessionId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('sessionId'); // Get sessionId from SharedPreferences
+  }
+
+  // Function to call the API and fetch the timetable
+  Future<void> generateTimetable() async {
+    String? sessionId = await getSessionId(); // Fetch sessionId from SharedPreferences
+
+    if (sessionId == null) {
+      // Handle case when sessionId is not available
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Error',
+        text: 'Session ID is not available.',
+      );
+      return;
+    }
+
+    // Define the URL for the API request
+    final url = Uri.parse('http://localhost:5000/generate-timetable');
+
+    // Set up the headers and body for the request
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({"sessionId": sessionId});
+
+    try {
+      // Send the POST request
+      final response = await http.post(url, headers: headers, body: body);
+
+      // Check if the response status is successful
+      if (response.statusCode == 200) {
+        // Successfully received data
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Success',
+          text: 'Timetable generated successfully.',
+        );
+      } else {
+        // Handle non-successful response
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'Failed to generate timetable.',
+        );
+      }
+    } catch (e) {
+      // Handle any errors that occur during the request
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Error',
+        text: 'Error generating timetable: $e',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestion des emplois du temps'),
-        backgroundColor:Colors.blue,
+        backgroundColor: Colors.blue,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -25,7 +87,8 @@ class ScheduleManagementPage extends StatelessWidget {
             // Bouton pour ajouter un nouvel emploi
             ElevatedButton.icon(
               onPressed: () {
-                // Logique pour ajouter un emploi
+                // Call the function to generate timetable when button is pressed
+                generateTimetable();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -34,64 +97,13 @@ class ScheduleManagementPage extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
               ),
-              icon: const Icon(Icons.add,color: Colors.white,),
+              icon: const Icon(
+                Icons.add,
+                color: Colors.white,
+              ),
               label: const Text(
                 "Ajouter un emploi",
-                style: TextStyle(fontSize: 18.0,color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-
-            // Liste des emplois
-            Expanded(
-              child: ListView.builder(
-                itemCount: schedules.length,
-                itemBuilder: (context, index) {
-                  final schedule = schedules[index];
-
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16.0),
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        child: const Icon(Icons.schedule, color: Colors.white),
-                      ),
-                      title: Text(
-                        schedule['title']!,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                      subtitle: Text(
-                        "${schedule['day']} | ${schedule['time']}",
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {
-                              // Logique pour modifier un emploi
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              // Logique pour supprimer un emploi
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                style: TextStyle(fontSize: 18.0, color: Colors.white),
               ),
             ),
           ],

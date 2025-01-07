@@ -91,4 +91,51 @@ class profapi {
   }
 
 
+
+
+
+  // Ajouter un professeur avec un body JSON
+ Future<String> addprofToSessionWithBody(
+    String sessionId, String teacherName, String email, String cin) async {
+  try {
+    // Définir l'URL pour ajouter un professeur
+    var uri = Uri.parse('$baseUrl/admin/session/$sessionId/teachers');
+
+    // Créer le body de la requête
+    Map<String, String> body = {
+      "teacherName": teacherName,
+      "email": email,
+      "cin": cin,
+    };
+
+    // Envoyer une requête HTTP POST
+    var response = await http.post(
+      uri,
+      headers: {
+        HttpHeaders.contentTypeHeader: 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    // Vérifier si le statut de la réponse est 200 (succès)
+    if (response.statusCode == 200) {
+      print('Teacher added successfully!');
+      return 'Teacher added successfully'; // Retourner un message de succès
+    } else if (response.statusCode == 409) {
+      // Handle conflict error (teacher already exists)
+      print('Teacher already exists: ${response.body}');
+      return 'Teacher with the same email, CIN, or name already exists.'; // Return conflict message
+    } else {
+      // Handle other errors
+      print('Failed to add teacher: ${response.statusCode} - ${response.body}');
+      return 'Failed to add teacher: ${response.statusCode} - ${response.body}'; // Return failure message
+    }
+  } catch (e) {
+    print('Error occurred while adding teacher: $e');
+    return 'Error occurred: $e'; // Return error message
+  }
 }
+}
+
+
+

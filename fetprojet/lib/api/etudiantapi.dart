@@ -63,4 +63,37 @@ class EtudiantApi {
       return 'Error occurred: $e'; // Retourner le message d'erreur
     }
   }
+  // Ajouter un étudiant avec les données envoyées dans le corps de la requête
+  Future<String> addStudentWithBody(String sessionId, String departmentId, String groupId, String name, String email, String cin, String group) async {
+    try {
+      // Définir l'URL pour l'ajout de l'étudiant
+      var uri = Uri.parse(
+        '$baseUrl/admin/session/$sessionId/departments/$departmentId/groups/$groupId/students',
+      );
+
+      // Créer le corps de la requête (body) avec les informations de l'étudiant
+      var body = jsonEncode({
+        'name': name,
+        'email': email,
+        'cin': cin,
+        'group': group,
+      });
+
+      // Envoyer la requête POST
+      var response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return 'Student added successfully';  // Success message
+      } else {
+        var errorDetails = jsonDecode(response.body); // Assuming the error message is in the response body
+        return 'Failed to add student: ${errorDetails['message']}';  // Return detailed error message
+      }
+    } catch (e) {
+      return 'Error occurred: $e';
+    }
+  }
 }

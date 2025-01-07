@@ -40,6 +40,12 @@ class _EtudiantPageState extends State<EtudiantPage> {
   final departmentapi _depApi = departmentapi();
   final EtudiantApi etapi = EtudiantApi();
 
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();  // Form Key for validation
+  String _name = '';
+  String _cin = '';
+  String _email = '';
+  String _group = '';
+
   @override
   void initState() {
     super.initState();
@@ -78,7 +84,87 @@ class _EtudiantPageState extends State<EtudiantPage> {
     }
   }
 
-  Future<void> deletestudent(String studentId) async {
+  // Add student to the database
+ Future<void> _addStudent() async {
+  if (_cin.length != 8 || !_cin.contains(RegExp(r'^\d+$'))) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'Invalid CIN',
+      text: 'CIN must contain exactly 8 digits.',
+    );
+    return;
+  }
+
+  if (!_email.contains('@gmail.com')) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'Invalid Email',
+      text: 'Email must be a valid Gmail address.',
+    );
+    return;
+  }
+
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+    
+    // Ensure groupId is selected
+    if (selectedDepartmentId != null && selectedGroupId != null) {
+      String responseMessage = await etapi.addStudentWithBody(
+        sessionId, 
+        selectedDepartmentId!, 
+        selectedGroupId!, 
+        _name, 
+        _email, 
+        _cin, 
+        _group
+      );
+
+      if (responseMessage.contains("successfully")) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Success',
+          text: responseMessage,  // Display server response here
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        );
+        fetchStudents(selectedGroupId!); // Refresh student list
+      } else {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: responseMessage,  // Display server response here
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        );
+      }
+    } else {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: 'Department or Group not selected!',
+      );
+    }
+  } catch (e) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'Error',
+      text: 'Failed to add student: $e',
+      onConfirmBtnTap: () {
+        Navigator.of(context).pop(); // Close the dialog
+      },
+    );
+  }
+}
+
+  Future<void> deleteStudent(String studentId) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       String? sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd";
@@ -252,7 +338,7 @@ class _EtudiantPageState extends State<EtudiantPage> {
                             trailing: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                deletestudent(student.id); // Appeler la méthode de suppression
+                                deleteStudent(student.id); // Appeler la méthode de suppression
                               },
                             ),
                           ),
@@ -262,7 +348,7 @@ class _EtudiantPageState extends State<EtudiantPage> {
                   : Center(
                       child: Text(selectedGroupId == null
                           ? 'Veuillez sélectionner un groupe pour afficher les étudiants.'
-                          : 'Aucun étudiant trouvé pour ce groupe.'),
+                          : 'Aucun étudiant trouvé pour ce groupe.'), 
                     ),
             ),
           ],
@@ -270,8 +356,75 @@ class _EtudiantPageState extends State<EtudiantPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Fonction pour ajouter un étudiant
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Add New Student'),
+                content: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        decoration: const InputDecoration(labelText: 'Name'),
+                        onSaved: (value) => _name = value!,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a name';
+                          }
+                          return null;
+                        },
+                      ),
+                      TextFormField(
+                        decoration: const InputDecoration(labelText: 'CIN'),
+                        onSaved: (value) => _cin = value!,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter CIN';
+                          }
+                          if (value.length != 8 || !RegExp(r'^\d+$').hasMatch(value)) {
+                            return 'CIN must be 8 digits';
+                          }
+                          return null;
+                        },
+                      ),
+                      TextFormField(
+                        decoration: const InputDecoration(labelText: 'Email'),
+                        onSaved: (value) => _email = value!,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter an email';
+                          }
+                          if (!value.contains('@gmail.com')) {
+                            return 'Email must be a valid Gmail address';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      if (_formKey.currentState?.validate() ?? false) {
+                        _formKey.currentState?.save();
+                        _addStudent();
+                      }
+                    },
+                    child: const Text('Add'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              );
+            },
+          );
         },
+        backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
       ),
     );

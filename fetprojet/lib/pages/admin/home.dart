@@ -1,8 +1,9 @@
 import 'package:fetprojet/authservice.dart';
 import 'package:fetprojet/pages/about.dart';
 import 'package:fetprojet/pages/admin/emploi/emploi.dart';
-import 'package:fetprojet/pages/admin/message.dart';
-import 'package:fetprojet/pages/admin/solde.dart';
+import 'package:fetprojet/pages/admin/program/programs.dart';
+import 'package:fetprojet/pages/admin/subjects/subjects.dart';
+import 'package:fetprojet/pages/admin/romms/rooms.dart';
 import 'package:fetprojet/pages/langagepagr.dart';
 import 'package:fetprojet/pages/profil.dart';
 import 'package:flutter/material.dart';
@@ -24,77 +25,99 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final List<MenuItem> menuItems = [
-    MenuItem(
-      'Class',
-      Icons.chair,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DepartmentClassPage()),
-        );
-      },
-    ),
-    MenuItem(
-      'Messages',
-      Icons.mail,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MessagesPage()),
-        );
-      },
-    ),
-    MenuItem(
-      'Etudiants',
-      Icons.group,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FileUploadPage()),
-        );
-      },
-    ),
-    MenuItem(
-      'Departments',
-      Icons.apartment,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DepartmentPage()),
-        );
-      },
-    ),
-    MenuItem('Résultats', Icons.school),
-    MenuItem('Emploi', Icons.schedule,(context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ScheduleManagementPage()),
-        );
-      },),
-    MenuItem(
-      'Teachers',
-      Icons.group,
-      (context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FileUploadPageprof()),
-        );
-      },
-    ),
-    MenuItem('Langues', Icons.language,(context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LanguageSelectionPage()),
-        );
-      },),
-    MenuItem('Mon Solde', Icons.attach_money,(context) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FinancePage()),
-        );
-      },),
-  ];
+ final List<MenuItem> menuItems = [
+  MenuItem(
+    'Class',
+    Icons.class_,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DepartmentClassPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Subjects',
+    Icons.subject,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SubjectsPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Etudiants',
+    Icons.people,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => FileUploadPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Departments',
+    Icons.apartment,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DepartmentPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Program',
+    Icons.school,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProgramPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Emploi',
+    Icons.schedule,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ScheduleManagementPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Teachers',
+    Icons.person,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => FileUploadPageprof()),
+      );
+    },
+  ),
+  MenuItem(
+    'Languages',
+    Icons.language,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LanguageSelectionPage()),
+      );
+    },
+  ),
+  MenuItem(
+    'Rooms',
+    Icons.meeting_room,
+    (context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => RoomPage()),
+      );
+    },
+  ),
+];
+
 late int _btindex = 0;
   @override
   Widget build(BuildContext context) {
