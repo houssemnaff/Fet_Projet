@@ -1,4 +1,6 @@
+import 'package:fetprojet/pages/admin/class/classs.dart';
 import 'package:fetprojet/pages/admin/department/departementsview.dart';
+import 'package:fetprojet/pages/admin/emploi/emploi.dart';
 import 'package:fetprojet/pages/admin/etudiant/etudiants.dart';
 import 'package:fetprojet/pages/admin/home.dart';
 import 'package:fetprojet/pages/admin/prof/profs.dart';
@@ -29,8 +31,8 @@ class DrawerPage extends StatelessWidget {
       {"icon": Icons.access_time, "title": "Session", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  Session()))},
       {"icon": Icons.account_circle, "title": "Etudiant", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  EtudiantPage()))},
       {"icon": Icons.person_outline, "title": "Teacher",  "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>  TeacherPage()))},
-      {"icon": Icons.calendar_today, "title": "Emploi", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()))},
-      {"icon": Icons.class_, "title": "Class", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => Dashboard()))},
+      {"icon": Icons.calendar_today, "title": "Emploi", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) =>ScheduleManagementPage()))},
+      {"icon": Icons.class_, "title": "Class", "onTap": () => Navigator.push(context, MaterialPageRoute(builder: (context) => DepartmentClassPage()))},
     ];
 
     return FutureBuilder<String>(

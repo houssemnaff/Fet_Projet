@@ -172,6 +172,8 @@ class _SessionState extends State<Session> {
                   onTap: () async{
                      final SharedPreferences prefs = await SharedPreferences.getInstance();
                      await prefs.setString("sessionId", session["sessionId"]);
+                                       //   await prefs.setString("sessionId", '6767ed5018e2bd7ea42682c8');
+
 
                     Navigator.push(
                       context,

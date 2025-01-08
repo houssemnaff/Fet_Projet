@@ -34,7 +34,7 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
     }
 
     // Define the URL for the API request
-    final url = Uri.parse('http://localhost:5000/generate-timetable');
+    final url = Uri.parse('http://10.0.2.2:5000/generate-timetable');
 
     // Set up the headers and body for the request
     final headers = {'Content-Type': 'application/json'};

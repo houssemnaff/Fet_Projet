@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:fetprojet/pages/prof/EditprofileTeacher.dart';
+import 'package:fetprojet/pages/prof/TeacherhomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:quickalert/quickalert.dart';
@@ -194,29 +196,42 @@ Widget build(BuildContext context) {
                         elevation: 3,
                         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              teacher.name.isNotEmpty
-                                  ? teacher.name[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          title: Text(teacher.name),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("CIN: ${teacher.cin}"),
-                              Text("Email: ${teacher.email}"),
-                              Text("Status: ${teacher.status}"),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteTeacher(teacher.id),
-                          ),
-                        ),
+  leading: CircleAvatar(
+    backgroundColor: Colors.blue,
+    child: Text(
+      teacher.name.isNotEmpty ? teacher.name[0].toUpperCase() : '?',
+      style: const TextStyle(color: Colors.white),
+    ),
+  ),
+  title: Text(teacher.name),
+  subtitle: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text("CIN: ${teacher.cin}"),
+      Text("Email: ${teacher.email}"),
+      Text("Status: ${teacher.status}"),
+    ],
+  ),
+  trailing: IconButton(
+    icon: const Icon(Icons.delete, color: Colors.red),
+    onPressed: () => _deleteTeacher(teacher.id),
+  ),
+  onTap: () async {
+    // Save teacher ID to SharedPreferences
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+          String sessionId = prefs.getString("sessionId") ?? "6767ed5018e2bd7ea42682c7";
+
+    await prefs.setString('sessionList', sessionId);
+    await prefs.setString("idUser", teacher.id);
+
+    // Navigate to EditProfileTeacher
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Teacherhomepage()),
+    );
+  },
+)
+
                       );
                     },
                   ),

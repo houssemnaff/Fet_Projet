@@ -241,7 +241,7 @@ late int _btindex = 0;
         );
     }
     if (index == 3) {
-     // authservice.logout(context);
+      AuthService().logout(context);
     }
   },
 ),

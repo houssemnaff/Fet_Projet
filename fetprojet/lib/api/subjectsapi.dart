@@ -66,39 +66,32 @@ class SubjectsApi {
   }
 
   // Add a subject
-  Future<String> addSubject(String sessionId, Subject subject) async {
-    final url = Uri.parse('$baseUrl/admin/session/$sessionId/subjects');
+ Future<String> addSubject(String sessionId, Subject subject) async {
+  final url = Uri.parse('$baseUrl/admin/session/$sessionId/subject');
 
-    // Get all subjects to check if the name exists
-    final response = await http.get(url);
+  try {
+    // Préparation de l'en-tête et du corps de la requête
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode({
+      "subjectName": subject.name, // Convertir le champ name en subjectName
+      "duration": subject.duration,
+      "type": subject.type,
+    });
+
+    // Envoi de la requête POST pour ajouter un sujet
+    final response = await http.post(url, headers: headers, body: body);
 
     if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      List<Subject> subjects = data.map((item) => Subject.fromJson(item)).toList();
-
-      // Check if the subject with the same name already exists
-      bool subjectExists = subjects.any((existingSubject) =>
-          existingSubject.name.toLowerCase() == subject.name.toLowerCase());
-
-      if (subjectExists) {
-        return 'Subject with the same name already exists in the session';
-      }
-
-      // If subject does not exist, proceed to add it
-      final headers = {'Content-Type': 'application/json'};
-      final body = json.encode(subject.toJson());
-
-      final postResponse = await http.post(url, headers: headers, body: body);
-
-      if (postResponse.statusCode == 201) {
-        return 'Subject added successfully';
-      } else {
-        return 'Failed to add subject';
-      }
+      return 'Subject added successfully';
+    } else if (response.statusCode == 400) {
+      return 'Subject with the same name already exists in the session';
     } else {
-      return 'Failed to load subjects for comparison';
+      return 'Failed to add subject. Server responded with status: ${response.statusCode}';
     }
+  } catch (e) {
+    return 'Failed to add subject. Error: $e';
   }
+}
 
   // Update a subject
   Future<String> updateSubject(String sessionId, String subjectId, Subject subject) async {

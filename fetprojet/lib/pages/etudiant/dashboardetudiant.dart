@@ -1,9 +1,7 @@
-import 'dart:math';
-
-import 'package:fetprojet/class/menuitem.dart';
 import 'package:fetprojet/components/drawer.dart';
-import 'package:fetprojet/pages/profil.dart';
+import 'package:fetprojet/pages/etudiant/profilee.dart';
 import 'package:flutter/material.dart';
+import 'package:fetprojet/pages/etudiant/timetable_page.dart';
 
 class DashEtudiant extends StatelessWidget {
   DashEtudiant({super.key});
@@ -11,30 +9,36 @@ class DashEtudiant extends StatelessWidget {
   final List<MenuItem> menuItems = [
     MenuItem('Absences', Icons.event_busy),
     MenuItem('Résultats', Icons.school),
-    MenuItem('Emploi', Icons.schedule),
+    MenuItem(
+      'Emploi',
+      Icons.schedule,
+      (context) => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const TimetablePage()),
+      ),
+    ),
     MenuItem('Mon Groupe', Icons.group),
     MenuItem('Langues', Icons.language),
     MenuItem('Mon Solde', Icons.attach_money),
     MenuItem('Message', Icons.message),
-    MenuItem('homework', Icons.work_history),
-     MenuItem('cours', Icons.bookmarks),
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const DrawerPage(),
+      drawer: DrawerPage(),
       appBar: AppBar(
-        title: const Text("Houssem naffouti"),
+        title: Text("Houssem naffouti"),
         backgroundColor: Colors.blue,
-        actions:  [
+        actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 13.0),
+            padding: EdgeInsets.only(right: 13.0),
             child: InkWell(
-              onTap: (){
-                 Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => UserProfilePage()),
-              );
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfileEtud()),
+                );
               },
               child: const CircleAvatar(
                 radius: 16,
@@ -54,7 +58,7 @@ class DashEtudiant extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            margin: const EdgeInsets.all(6),
+            margin: EdgeInsets.all(6),
             height: 180,
             decoration: BoxDecoration(
               image: const DecorationImage(
@@ -82,27 +86,30 @@ class DashEtudiant extends StatelessWidget {
                 return InkWell(
                   onTap: () {
                     if (item.routerpage != null) {
-                      item.routerpage!(
-                          context); // Call the router function if it exists
+                      item.routerpage!(context);
                     }
                   },
                   child: Card(
+                    elevation: 4,
+                    shadowColor: Colors.grey.shade300,
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
-                      
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          menuItems[index].icon,
+                          item.icon,
                           size: 40,
-                          color: const Color.fromARGB(255, 191, 25, 25),
+                          color: Colors.blue.shade700,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          menuItems[index].title,
+                          item.title,
                           textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -142,13 +149,12 @@ class DashEtudiant extends StatelessWidget {
       ),
     );
   }
+}
 
-  Function(BuildContext) route(Widget Function() pageBuilder) {
-    return (BuildContext context) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => pageBuilder()),
-      );
-    };
-  }
+class MenuItem {
+  final String title;
+  final IconData icon;
+  final Function(BuildContext)? routerpage;
+
+  MenuItem(this.title, this.icon, [this.routerpage]);
 }

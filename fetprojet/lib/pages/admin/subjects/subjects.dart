@@ -36,36 +36,41 @@ class _SubjectsPageState extends State<SubjectsPage> {
     }
   }
 
-  Future<void> _addSubject() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? sessionId = prefs.getString("sessionId") ??
-        "6767ed5018e2bd7ea42682c7"; // Default session ID
+ Future<void> _addSubject() async {
+  // Récupération de l'identifiant de session
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? sessionId = prefs.getString("sessionId") ?? "defaultSessionId";
 
-    if (_nameController.text.isEmpty ||
-        _durationController.text.isEmpty ||
-        _typeController.text.isEmpty) {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.warning,
-        title: 'Warning',
-        text: 'Please fill in all fields!',
-        onConfirmBtnTap: () {
-          Navigator.pop(context); // Close the dialog
-        },
-      );
-      return;
-    }
-
-    final newSubject = Subject(
-      subjectId: '', // Provide method for subject ID generation if needed
-      name: _nameController.text,
-      duration: _durationController.text,
-      type: _typeController.text,
+  // Vérification des champs vides
+  if (_nameController.text.trim().isEmpty ||
+      _durationController.text.trim().isEmpty ||
+      _typeController.text.trim().isEmpty) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      title: 'Warning',
+      text: 'Please fill in all fields with valid values!',
+      onConfirmBtnTap: () {
+        Navigator.pop(context);
+      },
     );
+    return;
+  }
 
+  // Création du nouvel objet Subject
+  final newSubject = Subject(
+    subjectId: '', // ID laissé vide, géré par le serveur
+    name: _nameController.text.trim(),
+    duration: _durationController.text.trim(),
+    type: _typeController.text.trim(),
+  );
+
+  try {
+    // Appel à l'API pour ajouter le sujet
     final api = SubjectsApi();
     String result = await api.addSubject(sessionId, newSubject);
 
+    // Gestion des retours de l'API
     if (result == 'Subject added successfully') {
       QuickAlert.show(
         context: context,
@@ -73,33 +78,41 @@ class _SubjectsPageState extends State<SubjectsPage> {
         title: 'Success',
         text: 'Subject added successfully!',
         onConfirmBtnTap: () {
-          Navigator.pop(context); // Close the dialog
+          Navigator.pop(context);
         },
       );
-      _loadSubjects(); // Refresh the list
-    } else if (result ==
-        'Subject with the same name already exists in the session') {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Error',
-        text: 'Subject already exists with this name!',
-        onConfirmBtnTap: () {
-          Navigator.pop(context); // Close the dialog
-        },
-      );
+
+      // Réinitialisation des champs et mise à jour des sujets
+      _nameController.clear();
+      _durationController.clear();
+      _typeController.clear();
+      await _loadSubjects(); // Appel de la fonction pour recharger les sujets
     } else {
+      // Message d'erreur retourné par l'API
       QuickAlert.show(
         context: context,
         type: QuickAlertType.error,
         title: 'Error',
-        text: 'Failed to add subject. Please try again.',
+        text: result,
         onConfirmBtnTap: () {
-          Navigator.pop(context); // Close the dialog
+          Navigator.pop(context);
         },
       );
     }
+  } catch (e) {
+    // Gestion des erreurs réseau ou d'exécution
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'Error',
+      text: 'An error occurred: $e',
+      onConfirmBtnTap: () {
+        Navigator.pop(context);
+      },
+    );
   }
+}
+
 
   Future<void> _deleteSubject(String subjectId) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
